@@ -16,6 +16,7 @@ Open the printed local URL. The Sites starter provides the production build and 
 ## Features
 
 - Import public HTTPS recipe pages with Schema.org Recipe JSON-LD, including @graph and HowToSection.
+- Use the Send to Simmer browser bookmark, or upload saved HTML / JSON, when a publisher blocks automatic URL requests.
 - Paste Recipe JSON or create a schema-compliant recipe with the guided writing form.
 - Edit instructions and optional step photo URLs. Recipe photos guide the final scene; step photos guide their corresponding scenes.
 - Generate one Runway Gen-4.5 clip per recipe step, with real status polling and resume support.
@@ -32,7 +33,9 @@ Provider docs: https://docs.dev.runwayml.com/guides/using-the-api/
 
 ## Limitations
 
-- Recipe websites must expose Recipe JSON-LD in their HTML. Bot-protected and JavaScript-only sites may need pasted JSON.
+- Recipe websites must expose Recipe JSON-LD in their HTML. Allrecipes and Serious Eats can block server requests; use the Send to Simmer bookmark from the normally opened recipe page, or import a saved HTML / Recipe JSON file. Simmer reports publisher blocking separately from schema validation failures.
+- Browser imports use a URL fragment (not a server request body or query string); the app removes it after validation. Saved files are parsed locally.
+- Long ingredient lists use only context that fits the provider prompt limit. The full instruction remains in the prompt and captions.
 - Projects are device-local, not synchronized. Re-enter the key after refreshing to resume a render.
 - Keep the tab visible while exporting. Export runs in real time via canvas and MediaRecorder, with no soundtrack.
 - Download provider outputs promptly because their URLs may expire.

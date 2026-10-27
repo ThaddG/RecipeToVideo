@@ -1,0 +1,58 @@
+{
+  "@type": [
+    "Recipe"
+  ],
+  "name": "Carrot Raisin Salad",
+  "description": "This carrot raisin salad with crushed pineapple is sweet and creamy with a splash of lemon for a bright flavor and an easy summer side dish.",
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://www.allrecipes.com/thmb/vxk-VxRAg9hSc-bw7scav8e4dwE=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/8458932-carrot-raisin-salad-VAT-Beauty-4x3-3b2903c080784efe8d77ba052852119e.jpg",
+    "height": 1125,
+    "width": 1500
+  },
+  "recipeIngredient": [
+    "4.5 cups shredded carrots",
+    "1 (8 ounce) can crushed pineapple, undrained",
+    "0.75 cup raisins",
+    "0.5 cup sugar",
+    "2 tablespoons sugar",
+    "0.5 cup mayonnaise",
+    "1.5 tablespoons freshly squeezed lemon juice"
+  ],
+  "recipeInstructions": [
+    {
+      "@type": "HowToStep",
+      "image": [
+        {
+          "@type": "ImageObject",
+          "url": "https://www.allrecipes.com/thmb/cYegyTKviCQHIDYSskDFbRBJqjU=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/8458932-carrot-raisin-salad-VAT-step-01-4152771246664f32a1cdfc88ac8d828b.jpg"
+        }
+      ],
+      "text": "Gather all ingredients."
+    },
+    {
+      "@type": "HowToStep",
+      "image": [
+        {
+          "@type": "ImageObject",
+          "url": "https://www.allrecipes.com/thmb/L7Bl_w_8FEoK_Zof0SeVNI1fG00=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/8458932-carrot-raisin-salad-VAT-step-02-9792f42555064576a255e421901a89b3.jpg"
+        }
+      ],
+      "text": "Combine carrots, pineapple with juice, raisins, ½ cup plus 2 tablespoons sugar (or to taste), mayonnaise, and lemon juice in a large bowl; mix well."
+    },
+    {
+      "@type": "HowToStep",
+      "image": [
+        {
+          "@type": "ImageObject",
+          "url": "https://www.allrecipes.com/thmb/lIoBn1zQCfdaZZEvH1uk1shkKFc=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/8458932-carrot-raisin-salad-VAT-step-03-10613685764046a29923a580203aa37f.jpg"
+        }
+      ],
+      "text": "Refrigerate for 2 hours before serving for flavors to meld for best results."
+    }
+  ],
+  "totalTime": "PT140M",
+  "recipeYield": "12",
+  "@context": "https://schema.org",
+  "url": "https://www.allrecipes.com/recipe/8458932/carrot-raisin-salad/"
+}
