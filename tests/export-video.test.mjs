@@ -17,7 +17,7 @@ function browser(options = {}) {
     fillRect() {}, fillText() {}, measureText(text) { return { width: text.length * 10 }; },
     drawImage() { if (options.drawError) throw new Error('Canvas draw failed'); },
   };
-  const stream = { getTracks: () => [{ stop: () => events.push('track stopped') }] };
+  const stream = { getTracks: () => [{ stop: () => events.push('track stopped') }], addTrack:track=>events.push(`attached ${track.kind}`) };
   class Video extends EventTarget {
     duration = 0.01; videoWidth = 1280; videoHeight = 720; readyState = 0; currentTime = 0;
     set src(value) {
@@ -101,3 +101,18 @@ for (const [option, pattern] of [
     } finally { h.restore(); }
   });
 }
+
+test('music is attached to the recording and follows the scene timeline', async () => {
+ const h=browser(),plays=[];let pauses=0;
+ const session={stream:{getAudioTracks:()=>[{kind:'audio'}]},play:(...args)=>plays.push(args),pause:()=>pauses++};
+ try{const result=await exportVideo(clips(),recipe,'9:16',true,()=>{},{session,duration:.02});assert.match(result.type,/opus/);assert.equal(h.events[0],'attached audio');assert.deepEqual(plays,[[0,.01,.02],[.01,.01,.02]]);assert.ok(pauses>=3);}finally{h.restore();}
+});
+test('music pauses and capture stops if rendering fails',async()=>{
+ const h=browser({drawError:true});let pauses=0;
+ const session={stream:{getAudioTracks:()=>[{kind:'audio'}]},play:()=>{},pause:()=>pauses++};
+ try{await assert.rejects(()=>exportVideo(clips(),recipe,'9:16',true,()=>{},{session,duration:.02}),/Canvas draw failed/);assert.ok(pauses>0);assert.ok(h.events.includes('track stopped'));}finally{h.restore();}
+});
+test('an unavailable audio track fails instead of silently exporting without music',async()=>{
+ const h=browser();const session={stream:{getAudioTracks:()=>[]},pause:()=>{}};
+ try{await assert.rejects(()=>exportVideo(clips(),recipe,'9:16',true,()=>{},{session,duration:.02}),/music track is unavailable/);assert.ok(h.events.includes('track stopped'));}finally{h.restore();}
+});

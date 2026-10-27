@@ -1,4 +1,5 @@
 import type { Recipe } from './recipe';
+import type { MusicSession } from './music';
 
 function waitForVideo(video: HTMLVideoElement, event: 'loadeddata' | 'ended', timeout: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
@@ -28,13 +29,15 @@ function waitForVideo(video: HTMLVideoElement, event: 'loadeddata' | 'ended', ti
 export async function exportVideo(
   blobs: Blob[], recipe: Recipe, format: string, captions: boolean,
   onProgress: (n: number) => void,
+  music?: {session: MusicSession; duration: number},
 ): Promise<Blob> {
   if (!blobs.length || blobs.length !== recipe.steps.length || blobs.some(b => !b.size)) {
     throw new Error('Every recipe step needs a completed, non-empty video before export.');
   }
   if (!['9:16', '16:9'].includes(format)) throw new Error('Choose portrait or landscape before exporting.');
   if (typeof MediaRecorder === 'undefined') throw new Error('Video export requires a browser with MediaRecorder support, such as Chrome.');
-  const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/mp4', 'video/webm']
+  if (music && (!Number.isFinite(music.duration) || music.duration <= 0)) throw new Error('Music needs a valid video duration.');
+  const mime = (music ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/mp4', 'video/webm'] : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/mp4', 'video/webm'])
     .find(x => MediaRecorder.isTypeSupported(x));
   if (!mime) throw new Error('Your browser does not support full video export. Download individual MP4 scenes or try Chrome.');
   const canvas = document.createElement('canvas');
@@ -47,9 +50,15 @@ export async function exportVideo(
   let recorder: MediaRecorder | undefined;
   let video: HTMLVideoElement | undefined;
   let frame = 0;
+  let elapsed = 0;
   const urls: string[] = [];
   const parts: Blob[] = [];
   try {
+    if (music) {
+      const tracks = music.session.stream.getAudioTracks();
+      if (!tracks.length) throw new Error('The music track is unavailable. Select a track and try export again.');
+      tracks.forEach(track => stream.addTrack(track));
+    }
     recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5_000_000 });
     const recording = recorder;
     recorder.ondataavailable = e => { if (e.data.size) parts.push(e.data); };
@@ -109,9 +118,12 @@ export async function exportVideo(
       draw();
       if (recording.state === 'inactive') recording.start(1000);
       else if (recording.state === 'paused') recording.resume();
+      music?.session.play(elapsed, v.duration, music.duration);
       await ended;
       cancelAnimationFrame(frame);
       recording.pause();
+      music?.session.pause();
+      elapsed += v.duration;
       v.pause();
       v.removeAttribute('src');
       v.load();
@@ -137,6 +149,7 @@ export async function exportVideo(
     return result;
   } finally {
     controller.abort(new Error('Export ended.'));
+    music?.session.pause();
     cancelAnimationFrame(frame);
     if (video) { video.pause(); video.removeAttribute('src'); video.load(); }
     if (recorder && recorder.state !== 'inactive') recorder.stop();
