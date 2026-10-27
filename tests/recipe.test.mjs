@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {parseRecipe,sampleSchema,scenePrompt} from '../lib/recipe.ts';
+import {publicURL,publicFetch} from '../lib/network.ts';
+test('imports nested graph, section, list items, and images',()=>{
+ const r=parseRecipe({'@graph':[{'@type':'WebPage'}, {...sampleSchema, image:{'@type':'ImageObject',contentUrl:'https://example.com/food.jpg'},recipeInstructions:[{'@type':'HowToSection',itemListElement:[{'@type':'HowToStep',name:'Mix',text:'Mix <b>well</b>.',image:{url:'https://example.com/mix.jpg'}},{'@type':'ListItem',item:{text:'Bake.'}}]}]}]});
+ assert.equal(r.steps.length,2);assert.equal(r.steps[0].text,'Mix well.');assert.equal(r.steps[0].image,'https://example.com/mix.jpg');assert.equal(r.images[0],'https://example.com/food.jpg');
+});
+test('extracts Recipe JSON-LD while skipping unrelated and malformed scripts',()=>{const r=parseRecipe(`<script type="application/ld+json">invalid</script><script type='application/ld+json'>${JSON.stringify(sampleSchema)}</script>`);assert.equal(r.steps.length,4);});
+test('rejects invalid schema and missing ingredients or steps',()=>{assert.throws(()=>parseRecipe('nope'),/valid Recipe/);assert.throws(()=>parseRecipe({'@type':'Article'}),/No Schema/);assert.throws(()=>parseRecipe({...sampleSchema,recipeIngredient:[]}),/recipeIngredient/);assert.throws(()=>parseRecipe({...sampleSchema,recipeInstructions:[]}),/recipeInstructions/);});
+test('supports newline instructions and strips unsafe image protocols',()=>{const r=parseRecipe({...sampleSchema,image:['javascript:alert(1)','https://example.com/a.jpg'],recipeInstructions:'Mix.\nBake.'});assert.equal(r.steps.length,2);assert.equal(r.steps[1].title,'Step 2');assert.deepEqual(r.images,['https://example.com/a.jpg']);});
+test('preserves the complete instruction in each provider prompt',()=>{const r=parseRecipe(sampleSchema);assert.ok(scenePrompt(r,0,'Overhead').includes(r.steps[0].text));assert.ok(scenePrompt(r,0,'Overhead').includes('Top-down'));r.steps[0].text='a'.repeat(1000);assert.throws(()=>scenePrompt(r,0,'Cinematic'),/too long/);});
+test('rejects private URL forms and credentials',()=>{for(const u of ['http://example.com','https://127.0.0.1','https://[::1]','https://host.local','https://user:pass@example.com','https://example.com:8080'])assert.throws(()=>publicURL(u));assert.equal(publicURL('https://example.com/a').hostname,'example.com');});
+test('blocks DNS resolved private addresses before fetching a website',async()=>{const original=global.fetch;let calls=0;global.fetch=async()=>{calls++;return Response.json({Answer:[{type:1,data:'10.0.0.1'}]});};try{await assert.rejects(()=>publicFetch('https://example.com'),/public recipe/);assert.equal(calls,1);}finally{global.fetch=original;}});
+test('rejects redirects to private hosts',async()=>{const original=global.fetch;global.fetch=async u=>String(u).includes('dns-query')?Response.json({Answer:[{type:1,data:'93.184.216.34'}]}):new Response(null,{status:302,headers:{location:'https://127.0.0.1/'}});try{await assert.rejects(()=>publicFetch('https://example.com'),/public HTTPS/);}finally{global.fetch=original;}});

@@ -1,0 +1,3 @@
+import { parseRecipe } from '../../../lib/recipe';
+import { publicFetch } from '../../../lib/network';
+export async function POST(request: Request) { try { if (Number(request.headers.get('content-length'))>10000) throw new Error('Request too large.'); const {url}=await request.json() as {url?:unknown}; if (typeof url !== 'string'||url.length>2000) throw new Error('Enter a recipe URL.'); const page=await publicFetch(url); const recipe=parseRecipe(page.text); recipe.source=page.url; return Response.json({recipe}); } catch(e) {return Response.json({error:e instanceof Error?e.message:'Could not import recipe.'},{status:400});} }
