@@ -20,6 +20,7 @@ Open the printed local URL. The Sites starter provides the production build and 
 - Edit instructions and optional step photo URLs. Recipe photos guide the final scene; step photos guide their corresponding scenes.
 - Generate one Runway Gen-4.5 clip per recipe step, with real status polling and resume support.
 - Portrait or landscape, cinematic / overhead / rustic prompts, 5 or 10 seconds per scene.
+- Download any completed scene directly as MP4, even before all scenes finish.
 - Preview generated clips; assemble a single silent 720p video in the browser with optional paginated instruction captions. WebM or MP4 depends on browser recording support.
 - Save projects and in-progress task IDs locally. No key is stored in localStorage.
 
