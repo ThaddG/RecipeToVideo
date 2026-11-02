@@ -40,7 +40,9 @@ Sites URL do not automatically appear on the Railway URL.
 - Generate one image-guided Runway Gen-4.5 clip per approved scene, with real status polling and resume support. Existing renders can be saved as a separate project version before revising their storyboard.
 - Portrait or landscape, cinematic / overhead / rustic prompts, 5 or 10 seconds per scene.
 - Optional original synthesized music: three moods, 12-second preview, volume control, looping, and opening/closing fades. Music choices are saved with each project and mixed during export. See MUSIC-LICENSE.md.
-- Download any completed scene directly as MP4, even before all scenes finish.
+- Preview actual completed clips separately from the still-image storyboard. Play the ready clips as a sequence, or download any completed scene as MP4 before the rest finish.
+- Check progress without creating paid tasks. Resume shows completed, processing, failed, and unstarted scenes separately, with estimated new credit usage. Temporary status failures retry the same task ID.
+- Completed clips are cached in IndexedDB when storage permits and reused for preview and export. Task IDs are saved immediately. An interrupted submission without a returned ID is blocked from automatic paid retry; link its task from Runway history, or explicitly confirm that no task exists.
 - Preview generated clips; assemble a single 720p video in the browser with optional paginated instruction captions. WebM or MP4 depends on browser recording support.
 - Save projects and in-progress task IDs locally. No key is stored in localStorage.
 
@@ -57,7 +59,7 @@ Provider docs: https://docs.dev.runwayml.com/guides/using-the-api/
 - Long ingredient lists use only context that fits the provider prompt limit. The full instruction remains in the prompt and captions.
 - Projects and generated storyboard images are device-local, not synchronized. Re-enter the key after refreshing to resume a render.
 - Keep the tab visible while exporting. Export runs in real time via canvas and MediaRecorder. Optional music uses Web Audio; original scene audio is muted. Individual scene MP4 downloads contain the original generated clip and do not include the selected background track.
-- Download provider outputs promptly because their URLs may expire.
+- Provider output links expire. Completed clips are cached locally when available; download important media because browser storage may be cleared or unavailable.
 - AI output is illustrative and may not precisely reproduce a cooking action. Review it against the written instructions.
 - Paid provider integration requires a real key for an end-to-end generation test. The repository test suite mocks the provider boundary.
 
