@@ -13,6 +13,18 @@ npm run dev
 
 Open the printed local URL. The Sites starter provides the production build and deployment integration.
 
+## Railway deployment
+
+Connect this repository to a Railway service. The root-level `railway.json` selects
+the Next.js production build (`npm run build:railway`) and server
+(`npm run start:railway`). Node 24 is selected by `.node-version`. The server binds
+to all interfaces and uses Railway's `PORT`; `/api/health` is the health check.
+Generate a Railway domain after deployment. No database, volume, or shared Runway
+key is required: visitors enter their own funded Runway key in Settings.
+
+Projects and cached images belong to the browser origin. Existing projects on the
+Sites URL do not automatically appear on the Railway URL.
+
 ## Features
 
 - Import public HTTPS recipe pages with Schema.org Recipe JSON-LD, including @graph and HowToSection.

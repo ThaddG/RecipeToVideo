@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules/
+node_modules/
 /.pnp
 .pnp.*
 # Keep authored Yarn tooling if the project adopts Yarn.
@@ -14,22 +14,34 @@
 /.next/
 /.vinext/
 /out/
+/.cache/
+/.vite/
+/.turbo/
 next-env.d.ts
 *.tsbuildinfo
 
 # Test output
 /coverage/
+/test-results/
+/playwright-report/
 
 # Package-manager logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
 
 # Local environment and keys
 .env*
 .dev.vars*
+!.env.example
+!.env.*.example
+!.dev.vars.example
 *.pem
+*.key
+*.p12
+*.pfx
 
 # Checkout-local tool state
 /.wrangler/
@@ -40,6 +52,19 @@ yarn-error.log*
 /.codex/
 /outputs/
 /work/
+/exports/
+/generated/
+/simmer-site-*.tar.gz
+
+# Local editor state
+/.idea/
+/.vscode/*.local.json
+*.swp
+*.swo
+*~
 
 # OS metadata
 .DS_Store
+._*
+Thumbs.db
+Desktop.ini
