@@ -1,6 +1,8 @@
+import {registerHooks} from 'node:module';
+registerHooks({resolve(s,c,n){try{return n(s,c)}catch(e){if(s.startsWith('.'))return n(s+'.ts',c);throw e}}});
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseRecipe,sampleSchema,scenePrompt} from '../lib/recipe.ts';
+const {parseRecipe,sampleSchema,scenePrompt}=await import('../lib/recipe.ts');
 import {publicURL,publicFetch} from '../lib/network.ts';
 test('imports nested graph, section, list items, and images',()=>{
  const r=parseRecipe({'@graph':[{'@type':'WebPage'}, {...sampleSchema, image:{'@type':'ImageObject',contentUrl:'https://example.com/food.jpg'},recipeInstructions:[{'@type':'HowToSection',itemListElement:[{'@type':'HowToStep',name:'Mix',text:'Mix <b>well</b>.',image:{url:'https://example.com/mix.jpg'}},{'@type':'ListItem',item:{text:'Bake.'}}]}]}]});

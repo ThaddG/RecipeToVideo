@@ -4,7 +4,7 @@ export function frameSignature(recipe:Recipe,index:number,format:string,style:st
 export function providedFrame(recipe:Recipe,index:number,useImages:boolean){return useImages?(recipe.steps[index]?.image||(index===recipe.steps.length-1?recipe.images[0]:undefined)):undefined;}
 export function validGeneratedFrame(frame:StoryboardFrame|undefined,signature:string){return !!frame?.imageKey&&frame.signature===signature;}
 export function firstAction(text:string){return text.split(/(?<=[.!?])\s+(?=[A-Z])/u)[0].trim();}
-export function splitScene(scene:Scene):Scene[]{const parts=scene.text.split(/(?<=[.!?])\s+(?=[A-Z])/u);const shots:string[]=[];for(const part of parts){if(part.length<45&&shots.length)shots[shots.length-1]+=' '+part;else shots.push(part);}return shots.map((text,i)=>({title:`${scene.title} · Shot ${i+1}`,text,...(i===0&&scene.image?{image:scene.image}:{})}));}
+export function splitScene(scene:Scene):Scene[]{const parts=scene.text.split(/(?<=[.!?])\s+(?=[A-Z])/u);const shots:string[]=[];for(const part of parts){if(part.length<45&&shots.length)shots[shots.length-1]+=' '+part;else shots.push(part);}return shots.map((text,i)=>({title:`${scene.title} · Shot ${i+1}`,text,...(i===0&&scene.image?{image:scene.image,...(scene.imageMatch?{imageMatch:scene.imageMatch}:{})}:{})}));}
 export function imagePrompt(recipe:Recipe,index:number,style:string,custom?:string,references:{dish?:boolean;previous?:boolean}={dish:!!recipe.images?.length}){
  if(custom?.trim()){if(custom.trim().length>1000)throw new Error('Image prompts must be 1,000 characters or fewer.');return custom.trim();}
  const action=firstAction(recipe.steps[index].text);
