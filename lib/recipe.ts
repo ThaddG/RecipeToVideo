@@ -1,6 +1,8 @@
+import {applyShotPlan} from './shot-plan';
+import type {Shot,ProductionPlan} from './shot-plan';
 import {articlePhotos,normalizePhotos,matchArticlePhotos,type ArticlePhoto} from './article-photos';
-export type Scene = { title: string; text: string; image?: string; imageMatch?:string };
-export type Recipe = { name: string; description: string; ingredients: string[]; steps: Scene[]; images: string[]; totalTime: string; yield: string; source?: string; photos?:ArticlePhoto[] };
+export type Scene = { title: string; text: string; image?: string; imageMatch?:string; shot?:Shot };
+export type Recipe = { name: string; description: string; ingredients: string[]; steps: Scene[]; images: string[]; totalTime: string; yield: string; source?: string; photos?:ArticlePhoto[]; production?:ProductionPlan };
 const clean = (s: unknown) => typeof s === 'string' ? s.replace(/<[^>]*>/g, '').replace(/&(?:amp|nbsp|quot|apos|lt|gt|#39|#34);/g, x => ({'&amp;':'&','&nbsp;':' ','&quot;':'"','&apos;':"'",'&#39;':"'",'&#34;':'"','&lt;':'<','&gt;':'>'}[x] || x)).replace(/\s+/g, ' ').trim() : '';
 function urls(v: any, base?: string): string[] {
  return (Array.isArray(v) ? v : [v]).flatMap(x => {
@@ -37,7 +39,8 @@ export function parseRecipe(input: string | object, source?: string): Recipe {
  const images=urls(r.image,base);
  const photos=typeof input==='string'&&/<(?:article|main|div)\b/i.test(input)?articlePhotos(input,base):normalizePhotos(r.simmerPhotos,base||urls(r.url)[0]);
  const scenes=instructions.map((s,i)=>({...s,title:s.title||`Step ${i+1}`}));
- return {name, description:clean(r.description),ingredients,steps:matchArticlePhotos(scenes,photos,images[0]),images,totalTime:clean(r.totalTime),yield:clean(r.recipeYield)||String(r.recipeYield||''),source:urls(r.url,base)[0]||base,...(photos.length?{photos}:{})};
+ const recipe:Recipe={name, description:clean(r.description),ingredients,steps:matchArticlePhotos(scenes,photos,images[0]),images,totalTime:clean(r.totalTime),yield:clean(r.recipeYield)||String(r.recipeYield||''),source:urls(r.url,base)[0]||base,...(photos.length?{photos}:{})};
+ return r.simmerShotPlan?applyShotPlan(recipe,r.simmerShotPlan):recipe;
 }
 export const sampleSchema = { '@context':'https://schema.org', '@type':'Recipe', name:'Basil pesto pasta', description:'Fresh basil, bright tomatoes, and parmesan. A bowl of effortless comfort, made for slow afternoons.', totalTime:'PT25M', recipeYield:'2 servings', image:['https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1400&q=85'], recipeIngredient:['200 g farfalle','3 tbsp basil pesto','150 g cherry tomatoes, halved','40 g parmesan, finely grated','½ cup reserved pasta water','Salt and freshly ground black pepper','Fresh basil, to finish'], recipeInstructions:[{'@type':'HowToStep',name:'Cook the pasta',text:'Bring a large pot of salted water to a boil. Cook the farfalle until al dente, reserving ½ cup of pasta water.'},{'@type':'HowToStep',name:'Make it silky',text:'Stir the basil pesto with a splash of reserved pasta water in a large bowl until smooth.'},{'@type':'HowToStep',name:'Toss it together',text:'Add the pasta, cherry tomatoes, and parmesan. Toss, adding pasta water a little at a time, until the pesto coats the pasta.'},{'@type':'HowToStep',name:'The finishing touch',text:'Spoon into warm bowls. Finish with basil, black pepper, and a little more parmesan.'}] };
 export const sampleRecipe = parseRecipe(sampleSchema);

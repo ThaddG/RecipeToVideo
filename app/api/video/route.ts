@@ -1,3 +1,4 @@
+import {falVideo} from '../../../lib/fal-video';
 import { scenePrompt, type Recipe } from '../../../lib/recipe';
 import { publicURL } from '../../../lib/network';
 import {motionPrompt,validateImageInput} from '../../../lib/storyboard';
@@ -7,10 +8,14 @@ export async function POST(request: Request) {
  let providerRequestStarted=false;
  try {
   if (Number(request.headers.get('content-length'))>7_000_000) throw new Error('Request too large.');
+  const b:any=await request.json();
+  if(b.model==='minimax'||b.model==='kling'){providerRequestStarted=true;return await falVideo(request,b);}
+  if(b.model&&b.model!=='runway')throw new Error('Unsupported video model.');
   const key=request.headers.get('x-runway-key'); if (!key || key.length>1000) return Response.json({error:'Connect your Runway API key in Settings to generate video.'},{status:401});
-  const b:any=await request.json(); const headers={'Authorization':`Bearer ${key}`,'X-Runway-Version':'2024-11-06','Content-Type':'application/json'};
+  const headers={'Authorization':`Bearer ${key}`,'X-Runway-Version':'2024-11-06','Content-Type':'application/json'};
   let response:Response;
   if (b.action==='create') {
+   if(b.endFrame)throw new Error('Runway Gen-4.5 does not support an ending frame in this app. Select MiniMax or Kling.');
    const r=b.recipe as Recipe;
    if (!r || !Array.isArray(r.steps) || r.steps.length>30 || !Array.isArray(r.ingredients) || r.ingredients.some(x=>typeof x!=='string') || typeof r.name!=='string' || !Number.isInteger(b.index) || b.index<0 || b.index>=r.steps.length || typeof r.steps[b.index]?.text!=='string' || !['Cinematic','Overhead','Rustic'].includes(b.style) || !['9:16','16:9'].includes(b.format) || ![5,10].includes(b.duration)) throw new Error('Invalid scene settings.');
    const image=b.storyboardImage?validateImageInput(b.storyboardImage):(b.useImages?r.steps[b.index].image||(b.index===r.steps.length-1?r.images?.[0]:undefined):undefined);

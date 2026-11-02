@@ -1,9 +1,9 @@
-export type VideoJob={id:string;status:string;output?:string[];failure?:string;failureCode?:string;requestId?:string;previousTaskIds?:string[]};
+export type VideoJob={id:string;status:string;output?:string[];failure?:string;failureCode?:string;requestId?:string;previousTaskIds?:string[];model?:string;provider?:string;review?:string;rejected?:boolean;replacedClips?:VideoJob[]};
 export class VideoRequestError extends Error {
  status:number;retryAfter:number;
  constructor(message:string,status=0,retryAfter=0){super(message);this.status=status;this.retryAfter=retryAfter;}
 }
-export const failedJob=(job:VideoJob|undefined)=>!!job&&['FAILED','CANCELLED','DELETED','MISSING','NOT_SUBMITTED'].includes(job.status);
+export const failedJob=(job:VideoJob|undefined)=>!!job&&['FAILED','CANCELLED','DELETED','MISSING','NOT_SUBMITTED','REJECTED'].includes(job.status);
 export const uncertainJob=(job:VideoJob|undefined)=>!!job&&!job.id&&['SUBMITTING','SUBMISSION_UNKNOWN'].includes(job.status);
 export function generationPlan(jobs:(VideoJob|undefined)[],count:number){
  const completed:number[]=[],tracking:number[]=[],fresh:number[]=[],retry:number[]=[],uncertain:number[]=[];
@@ -23,7 +23,7 @@ export async function pollWithRetry(id:string,{poll,wait=ms=>new Promise(r=>setT
    const status=error instanceof VideoRequestError?error.status:0;
    if(attempt>=3||![0,408,429,500,502,503,504].includes(status))throw error;
    const delay=Math.min(30000,Math.max(5000*2**attempt,error instanceof VideoRequestError?error.retryAfter:0));
-   notice(`Connection interrupted. Checking the same Runway task again in ${Math.round(delay/1000)} seconds; no new generation is being created.`);
+   notice(`Connection interrupted. Checking the same provider task again in ${Math.round(delay/1000)} seconds; no new generation is being created.`);
    await wait(delay);
   }
  }
@@ -34,10 +34,10 @@ export async function runVideoJobs({count,getJob,write,create,poll,onSelect=()=>
   if(paused())return;
   let job=getJob(i);if(job?.status==='SUCCEEDED')continue;
   onSelect(i);
-  if(uncertainJob(job))throw new Error(`Scene ${i+1} has an unconfirmed submission. Check Runway's task history and recover its task ID before retrying; it may already have used credits.`);
+  if(uncertainJob(job))throw new Error(`Scene ${i+1} has an unconfirmed submission. Check the provider’s task history and recover its task ID before retrying; it may already have used credits.`);
   if(!job?.id||failedJob(job)){
    const previousTaskIds=[...(job?.previousTaskIds||[]),...(job?.id?[job.id]:[])];
-   const submission:VideoJob={id:'',status:'SUBMITTING',requestId:requestId(),previousTaskIds};
+   const submission:VideoJob={id:'',status:'SUBMITTING',requestId:requestId(),previousTaskIds,...(job?.status==='REJECTED'?{replacedClips:[...(job.replacedClips||[]),{...job,replacedClips:undefined}]}:job?.replacedClips?{replacedClips:job.replacedClips}:{})};
    write(i,submission);
    try{
     const created=await create(i,submission.requestId!);
@@ -46,7 +46,7 @@ export async function runVideoJobs({count,getJob,write,create,poll,onSelect=()=>
    }catch(error){
     const rejected=error instanceof VideoRequestError&&[400,401,402,403,413,415,422,429].includes(error.status);
     write(i,{...submission,status:rejected?'NOT_SUBMITTED':'SUBMISSION_UNKNOWN',failure:failureMessage(error)});
-    throw new Error(rejected?`Scene ${i+1} was not submitted: ${failureMessage(error)}`:`Scene ${i+1}: submission could not be confirmed. Runway may still be processing it. Recover the task ID before creating another paid task.`);
+    throw new Error(rejected?`Scene ${i+1} was not submitted: ${failureMessage(error)}`:`Scene ${i+1}: submission could not be confirmed. The provider may still be processing it. Recover the task ID before creating another paid task.`);
    }
    // Save the returned ID before any polling, preview, or next scene.
    write(i,job);
@@ -60,8 +60,8 @@ export async function runVideoJobs({count,getJob,write,create,poll,onSelect=()=>
    job={...job,...state,id:job.id};write(i,job);
    if(job.status==='SUCCEEDED'){try{await onComplete(i,job);}catch(error){notice(`Scene ${i+1} completed. Its download needs attention: ${failureMessage(error)}. Other scenes can continue.`);}break;}
    if(failedJob(job))throw new Error(`Scene ${i+1} ${job.status.toLowerCase()}: ${failureMessage(job.failure)}${job.failureCode?` (${job.failureCode})`:''} Completed clips are kept. Review the failed scene before confirming a paid retry.`);
-   if(now()-started>timeoutMs)throw new Error(`Scene ${i+1} is still ${job.status.toLowerCase()} at Runway. Monitoring paused; the task may keep running. Resume will check this saved task, without recreating it.`);
-   notice(`Scene ${i+1}: ${job.status==='THROTTLED'?'queued at Runway':job.status.toLowerCase()}. Its task ID is saved.`);
+   if(now()-started>timeoutMs)throw new Error(`Scene ${i+1} is still ${job.status.toLowerCase()} at the provider. Monitoring paused; the task may keep running. Resume will check this saved task, without recreating it.`);
+   notice(`Scene ${i+1}: ${job.status==='THROTTLED'?'queued at the provider':job.status.toLowerCase()}. Its task ID is saved.`);
    await wait(5000);
   }
  }

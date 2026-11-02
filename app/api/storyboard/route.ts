@@ -1,6 +1,9 @@
+import {planImagePrompt} from '../../../lib/shot-plan';
+import {imageModels} from '../../../lib/generation-settings';
 import {imagePrompt,validateImageInput,validateSceneInput} from '../../../lib/storyboard';
 const api='https://api.dev.runwayml.com/v1';
 export async function POST(request:Request){
+ let providerRequestStarted=false;
  try{
   if(Number(request.headers.get('content-length'))>7_000_000)throw new Error('Storyboard request is too large.');
   const key=request.headers.get('x-runway-key');if(!key||key.length>1000)return Response.json({error:'Connect your Runway API key in Settings to generate storyboard images.'},{status:401});
@@ -8,12 +11,23 @@ export async function POST(request:Request){
   let response:Response;
   if(body.action==='create'){
    validateSceneInput(body.recipe,body.index,body.format,body.style);
+   const model=body.imageModel||'runway';if(!(model in imageModels))throw new Error('Invalid storyboard image model.');
+   const nano=model==='nano';
    const referenceImages:{uri:string;tag:string}[]=[];
    if(body.useImages&&body.recipe.images?.[0])referenceImages.push({uri:validateImageInput(body.recipe.images[0]),tag:'dish'});
+   if(body.anchorFrame)referenceImages.push({uri:validateImageInput(body.anchorFrame),tag:'anchor'});
    if(body.previousFrame)referenceImages.push({uri:validateImageInput(body.previousFrame),tag:'previous'});
-   response=await fetch(`${api}/text_to_image`,{method:'POST',headers,body:JSON.stringify({model:'gen4_image',ratio:body.format==='9:16'?'1080:1920':'1920:1080',promptText:imagePrompt(body.recipe,body.index,body.style,body.prompt,{dish:referenceImages.some(r=>r.tag==='dish'),previous:referenceImages.some(r=>r.tag==='previous')}),...(referenceImages.length?{referenceImages}:{})}),signal:AbortSignal.timeout(30000)});
+   if(body.phase&&body.phase!=='end')throw new Error('Invalid image phase.');
+   if(body.phase==='end'&&!body.recipe.steps[body.index].shot)throw new Error('Plan an ending state first.');
+   let promptText=body.phase==='end'?planImagePrompt(body.recipe,body.index,'end'):imagePrompt(body.recipe,body.index,body.style,body.prompt,{dish:referenceImages.some(r=>r.tag==='dish'),previous:referenceImages.some(r=>r.tag==='previous')});
+   const roles=referenceImages.map((r,i)=>`${nano?'Reference '+(i+1):'@'+r.tag}: ${r.tag==='dish'?'finished food appearance only':r.tag==='anchor'?'fixed kitchen, vessel geometry, lighting and tool identity':'previous shot food state; change only what this shot requires'}`).join('. ');
+   if(roles&&(nano||body.recipe.production||body.anchorFrame))promptText+=' '+roles+'.';
+   if(promptText.length>(nano?5500:1000))throw new Error(nano?'Shorten the shot direction.':'This detailed shot requires Nano Banana 2.1, or a shorter custom image direction.');
+   providerRequestStarted=true;
+   response=await fetch(`${api}/text_to_image`,{method:'POST',headers,body:JSON.stringify({model:nano?'nano_banana_2.1':'gen4_image',ratio:nano?(body.format==='9:16'?'768:1376':'1376:768'):(body.format==='9:16'?'1080:1920':'1920:1080'),promptText,...(nano?{thinkingLevel:'medium'}:{}),...(referenceImages.length?{referenceImages:nano?referenceImages.map(r=>({uri:r.uri})):referenceImages}:{})}),signal:AbortSignal.timeout(30000)});
   }else{
    if(!['status','media'].includes(body.action)||typeof body.id!=='string'||! /^[a-zA-Z0-9_-]{1,128}$/.test(body.id))throw new Error('Invalid storyboard task.');
+   providerRequestStarted=true;
    response=await fetch(`${api}/tasks/${body.id}`,{headers,signal:AbortSignal.timeout(30000)});
   }
   const data:any=await response.json();if(!response.ok)return Response.json({error:data.error||data.message||`Runway returned ${response.status}. Check your API credits.`},{status:response.status});
@@ -24,5 +38,5 @@ export async function POST(request:Request){
    const blob=await media.blob();if(blob.size>15_000_000)throw new Error('The generated image is too large.');return new Response(blob,{headers:{'Content-Type':type,'Cache-Control':'no-store'}});
   }
   return Response.json(data,{headers:{'Cache-Control':'no-store'}});
- }catch(e){return Response.json({error:e instanceof Error?e.message:'Storyboard generation failed.'},{status:400});}
+ }catch(e){return Response.json({error:e instanceof Error?e.message:'Storyboard generation failed.'},{status:providerRequestStarted?502:400});}
 }

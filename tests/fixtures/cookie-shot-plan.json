@@ -1,0 +1,538 @@
+{
+  "bible": {
+    "countertop": "Light oak worktop",
+    "lighting": "Soft daylight from the left",
+    "camera": "Locked overhead camera",
+    "vessels": [
+      {
+        "id": "wet-bowl",
+        "description": "Large clear heatproof glass mixing bowl"
+      },
+      {
+        "id": "pan",
+        "description": "8 by 8 inch square silver metal pan with parchment overhang"
+      },
+      {
+        "id": "saucepan",
+        "description": "Small brushed stainless steel saucepan with black handle"
+      },
+      {
+        "id": "dry-bowl",
+        "description": "Medium matte white ceramic bowl for dry ingredients"
+      }
+    ],
+    "tools": [
+      {
+        "id": "whisk",
+        "description": "Stainless balloon whisk"
+      },
+      {
+        "id": "spatula",
+        "description": "One flexible blue silicone spatula"
+      },
+      {
+        "id": "skewer",
+        "description": "Slim wooden skewer"
+      },
+      {
+        "id": "knife",
+        "description": "Stainless chefs knife"
+      },
+      {
+        "id": "rack",
+        "description": "Rectangular steel wire cooling rack"
+      }
+    ]
+  },
+  "shots": [
+    {
+      "sourceStep": 1,
+      "title": "Grease the pan",
+      "action": "The hand lightly sprays the inside of the stationary metal pan.",
+      "startState": "Empty silver 8 by 8 inch pan on the oak counter; cooking spray held above it.",
+      "endState": "Inner pan surfaces lightly greased.",
+      "ingredientIndices": [
+        0
+      ],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "Set oven rack to middle and preheat to 350\u00b0F (175\u00b0C) off camera.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "Cooking spray"
+      ]
+    },
+    {
+      "sourceStep": 1,
+      "title": "Line the pan",
+      "action": "The hand presses parchment gently into the greased pan.",
+      "startState": "Greased pan; parchment sheet held above its interior.",
+      "endState": "Pan lined with parchment leaving a 1 inch overhang on two opposite sides.",
+      "ingredientIndices": [
+        0
+      ],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "Set prepared pan aside.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "Cooking spray"
+      ]
+    },
+    {
+      "sourceStep": 2,
+      "title": "Brown the butter",
+      "action": "The blue spatula slowly stirs the browned butter.",
+      "startState": "Butter already melted in the steel saucepan; amber milk solids visible.",
+      "endState": "Amber browned butter remains in the saucepan.",
+      "ingredientIndices": [
+        1
+      ],
+      "vesselIds": [
+        "saucepan"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "low",
+      "reviewNote": "Cook butter over medium heat, stirring frequently, about 7 minutes. Cut past heating time; do not animate butter instantly changing color.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "10 tablespoons unsalted butter (5 ounces; 142 g)"
+      ]
+    },
+    {
+      "sourceStep": 2,
+      "title": "Transfer browned butter",
+      "action": "The hand tips the saucepan once, pouring browned butter into the stationary glass bowl.",
+      "startState": "Saucepan with browned butter held above the empty large heatproof glass bowl.",
+      "endState": "All browned butter transferred to the heatproof bowl.",
+      "ingredientIndices": [
+        1
+      ],
+      "vesselIds": [
+        "saucepan",
+        "wet-bowl"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "Transfer immediately after browning; retain the saucepan without wiping it out.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "10 tablespoons unsalted butter (5 ounces; 142 g)"
+      ]
+    },
+    {
+      "sourceStep": 2,
+      "title": "Add measured spices",
+      "action": "The hand tips the measured spices into the stationary bowl.",
+      "startState": "Browned butter in the glass bowl; one small container holds the measured spices.",
+      "endState": "Measured cinnamon, ginger, nutmeg and allspice rest in the butter.",
+      "ingredientIndices": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 1/2 teaspoons ground cinnamon",
+        "1/2 teaspoon ground ginger",
+        "1/4 teaspoon ground nutmeg",
+        "1/4 teaspoon ground allspice"
+      ]
+    },
+    {
+      "sourceStep": 2,
+      "title": "Whisk the spices",
+      "action": "The hand moves the whisk through the spiced butter in three slow circles.",
+      "startState": "All measured spices already in butter; whisk touching the mixture.",
+      "endState": "Spices dispersed in the browned butter.",
+      "ingredientIndices": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [
+        "whisk"
+      ],
+      "risk": "low",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": [
+        "10 tablespoons unsalted butter (5 ounces; 142 g)",
+        "1 1/2 teaspoons ground cinnamon",
+        "1/2 teaspoon ground ginger",
+        "1/4 teaspoon ground nutmeg",
+        "1/4 teaspoon ground allspice"
+      ]
+    },
+    {
+      "sourceStep": 3,
+      "title": "Reduce pumpkin",
+      "action": "The blue spatula slowly stirs the thick reduced pumpkin.",
+      "startState": "Pumpkin already in the same steel saucepan, with browned bits incorporated; puree visibly drier.",
+      "endState": "Reduced pumpkin remains visibly dry and thick.",
+      "ingredientIndices": [
+        6
+      ],
+      "vesselIds": [
+        "saucepan"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "low",
+      "reviewNote": "Add puree to retained pan and stir in browned bits. Cook medium heat until sizzling and large bubbles form, 2\u20133 minutes, then cook 5\u20136 minutes more until reduced to 1/3 cup plus 1 tablespoon (96 g). Cut past elapsed cooking time.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "2/3 cup (144 g) canned pumpkin pur\u00e9e from 1 (15-ounce; 425 g) can (see notes)"
+      ]
+    },
+    {
+      "sourceStep": 3,
+      "title": "Transfer pumpkin",
+      "action": "The hand scrapes reduced pumpkin from the saucepan into the stationary glass bowl.",
+      "startState": "Reduced pumpkin in saucepan held above the glass bowl containing spiced browned butter.",
+      "endState": "Reduced pumpkin sits in the spiced butter.",
+      "ingredientIndices": [
+        6
+      ],
+      "vesselIds": [
+        "saucepan",
+        "wet-bowl"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "high",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": [
+        "2/3 cup (144 g) canned pumpkin pur\u00e9e from 1 (15-ounce; 425 g) can (see notes)"
+      ]
+    },
+    {
+      "sourceStep": 3,
+      "title": "Whisk pumpkin and butter",
+      "action": "The whisk makes three slow circles through the pumpkin mixture.",
+      "startState": "Reduced pumpkin and spiced butter already together; whisk touching mixture.",
+      "endState": "Pumpkin and butter combined into one smooth mixture.",
+      "ingredientIndices": [
+        1,
+        6
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [
+        "whisk"
+      ],
+      "risk": "low",
+      "reviewNote": "Refrigerate uncovered about 20 minutes until cooled to room temperature. The next shot starts after cooling; do not animate cooling.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "10 tablespoons unsalted butter (5 ounces; 142 g)",
+        "2/3 cup (144 g) canned pumpkin pur\u00e9e from 1 (15-ounce; 425 g) can (see notes)"
+      ]
+    },
+    {
+      "sourceStep": 4,
+      "title": "Whisk dry ingredients",
+      "action": "The whisk moves slowly through the dry ingredients.",
+      "startState": "Measured flour, salt and baking soda already in medium white ceramic bowl; whisk touching flour.",
+      "endState": "Dry ingredients evenly combined in the white bowl.",
+      "ingredientIndices": [
+        7,
+        8,
+        9
+      ],
+      "vesselIds": [
+        "dry-bowl"
+      ],
+      "toolIds": [
+        "whisk"
+      ],
+      "risk": "low",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 2/3 cups all-purpose flour (7 1/2 ounces; 213 g)",
+        "1 teaspoon Diamond Crystal kosher salt; for table salt, use half as much by volume",
+        "1/2 teaspoon baking soda"
+      ]
+    },
+    {
+      "sourceStep": 5,
+      "title": "Add sugars",
+      "action": "The hand tips the measured sugars into the stationary glass bowl.",
+      "startState": "Cooled pumpkin mixture in the glass bowl; one measured sugar container held above it.",
+      "endState": "Both source quantities of sugar rest in the pumpkin mixture.",
+      "ingredientIndices": [
+        10,
+        11
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "Review the source instruction and retain its cooking and waiting times.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "3/4 cup packed dark brown sugar (5 3/4 ounces; 163 g)",
+        "1/3 cup granulated sugar (2 1/3 ounces; 67 g)"
+      ]
+    },
+    {
+      "sourceStep": 5,
+      "title": "Add vanilla",
+      "action": "The hand pours the measured vanilla into the stationary bowl.",
+      "startState": "Sugars already added; a small measured vanilla cup is poised above the glass bowl.",
+      "endState": "The measured vanilla has joined the sugars and pumpkin mixture.",
+      "ingredientIndices": [
+        12
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "Review the source instruction and retain its cooking and waiting times.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "2 teaspoons (10 ml) vanilla extract"
+      ]
+    },
+    {
+      "sourceStep": 5,
+      "title": "Whisk",
+      "action": "The hand moves the whisk in three slow circles through the mixture.",
+      "startState": "The sugars and vanilla already sit in the pumpkin mixture; whisk touching mixture.",
+      "endState": "The sugars, vanilla and pumpkin mixture are evenly combined.",
+      "ingredientIndices": [
+        6,
+        10,
+        11,
+        12
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [
+        "whisk"
+      ],
+      "risk": "low",
+      "reviewNote": "Review the source instruction and retain its cooking and waiting times.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "2/3 cup (144 g) canned pumpkin pur\u00e9e from 1 (15-ounce; 425 g) can (see notes)",
+        "3/4 cup packed dark brown sugar (5 3/4 ounces; 163 g)",
+        "1/3 cup granulated sugar (2 1/3 ounces; 67 g)",
+        "2 teaspoons (10 ml) vanilla extract"
+      ]
+    },
+    {
+      "sourceStep": 5,
+      "title": "Fold flour",
+      "action": "The blue spatula folds the flour mixture through the wet mixture.",
+      "startState": "Flour mixture already added on top of wet mixture; spatula resting against the side.",
+      "endState": "Only a few dry streaks of flour remain in the thick dough.",
+      "ingredientIndices": [
+        7,
+        8,
+        9
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "low",
+      "reviewNote": "Review the source instruction and retain its cooking and waiting times.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 2/3 cups all-purpose flour (7 1/2 ounces; 213 g)",
+        "1 teaspoon Diamond Crystal kosher salt; for table salt, use half as much by volume",
+        "1/2 teaspoon baking soda"
+      ]
+    },
+    {
+      "sourceStep": 5,
+      "title": "Fold chips",
+      "action": "The blue spatula folds the chocolate chips through the thick dough.",
+      "startState": "One cup chocolate chips rests on thick dough; blue spatula touching dough.",
+      "endState": "Chocolate chips evenly distributed and no dry flour remains.",
+      "ingredientIndices": [
+        13
+      ],
+      "vesselIds": [
+        "wet-bowl"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "low",
+      "reviewNote": "Review the source instruction and retain its cooking and waiting times.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 cup chocolate chips resting on the dough, to fold in"
+      ]
+    },
+    {
+      "sourceStep": 6,
+      "title": "Scrape dough into pan",
+      "action": "The blue spatula scrapes dough from glass bowl into the stationary pan.",
+      "startState": "Thick chocolate-chip dough in glass bowl tilted above prepared parchment-lined pan.",
+      "endState": "Dough rests in prepared pan.",
+      "ingredientIndices": [
+        13
+      ],
+      "vesselIds": [
+        "wet-bowl",
+        "pan"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "high",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 cup chocolate chips already in the dough"
+      ]
+    },
+    {
+      "sourceStep": 6,
+      "title": "Level the dough",
+      "action": "The blue spatula slowly levels the dough surface.",
+      "startState": "Dough already in prepared pan, blue spatula touching surface.",
+      "endState": "Dough spread in an even layer.",
+      "ingredientIndices": [
+        13
+      ],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [
+        "spatula"
+      ],
+      "risk": "low",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 cup chocolate chips already in the dough"
+      ]
+    },
+    {
+      "sourceStep": 6,
+      "title": "Top with chips",
+      "action": "The hand gently scatters the measured chips over the level dough.",
+      "startState": "Level dough in pan; measured remaining 1/4 cup chips held above it.",
+      "endState": "Remaining chips distributed evenly and lightly settled into dough.",
+      "ingredientIndices": [
+        13
+      ],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "Gently press chips into dough after sprinkling.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "Remaining 1/4 cup chocolate chips to add on top"
+      ]
+    },
+    {
+      "sourceStep": 7,
+      "title": "Check the baked center",
+      "action": "The hand slowly withdraws the skewer from the center of the baked bars.",
+      "startState": "Bars already baked in same pan; dry top and just-set soft center; wooden skewer touching center.",
+      "endState": "Skewer withdrawn clean or streaked only with melted chocolate.",
+      "ingredientIndices": [
+        13
+      ],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [
+        "skewer"
+      ],
+      "risk": "high",
+      "reviewNote": "Bake 25\u201330 minutes at 350\u00b0F (175\u00b0C) before this shot. Use an editorial cut to the baked state rather than a time-lapse food transformation.",
+      "duration": 5,
+      "ingredientAmounts": [
+        "1 cup chocolate chips already in the dough"
+      ]
+    },
+    {
+      "sourceStep": 8,
+      "title": "Cool on the rack",
+      "action": "The hands gently lower the pan onto the wire rack.",
+      "startState": "Pan of baked bars held just above rectangular wire rack.",
+      "endState": "Pan rests on cooling rack.",
+      "ingredientIndices": [],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [
+        "rack"
+      ],
+      "risk": "high",
+      "reviewNote": "Let bars cool completely in pan, 1\u20132 hours before the next shot.",
+      "duration": 5,
+      "ingredientAmounts": []
+    },
+    {
+      "sourceStep": 8,
+      "title": "Lift cooled bars",
+      "action": "The hands slowly lift the cooled bars using the parchment overhang.",
+      "startState": "Completely cooled bars in pan; hands hold parchment overhang on two opposite sides.",
+      "endState": "Cooled slab lifted clear of the pan on its parchment.",
+      "ingredientIndices": [],
+      "vesselIds": [
+        "pan"
+      ],
+      "toolIds": [],
+      "risk": "high",
+      "reviewNote": "",
+      "duration": 5,
+      "ingredientAmounts": []
+    },
+    {
+      "sourceStep": 8,
+      "title": "Cut and serve",
+      "action": "The hand presses the knife straight down through one marked portion line.",
+      "startState": "Cooled slab on parchment on oak counter, marked into 12 portions; knife at one dividing line.",
+      "endState": "Knife completes one straight cut, showing the 12 planned portions.",
+      "ingredientIndices": [],
+      "vesselIds": [],
+      "toolIds": [
+        "knife"
+      ],
+      "risk": "high",
+      "reviewNote": "Cut all 12 portions and serve; show one representative cut rather than multiple rapid actions.",
+      "duration": 5,
+      "ingredientAmounts": []
+    }
+  ]
+}
