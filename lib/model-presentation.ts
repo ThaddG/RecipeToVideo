@@ -2,6 +2,7 @@ import {imageModels,videoModels,type ImageModel,type VideoModel} from './generat
 
 // Temporary presentation switch. Provider IDs, saved preferences and billing stay intact.
 export const SHOW_MODEL_NAMES = false;
+export const SHOW_MODEL_CONTROLS = false;
 export function modelCopy(named:string,neutral:string){return SHOW_MODEL_NAMES?named:neutral;}
 export function imageModelLabel(id:ImageModel){return SHOW_MODEL_NAMES?imageModels[id].label:({nano:'Studio images · 1K',runway:'Alternative images'}[id]);}
 export function videoModelLabel(id:VideoModel){return SHOW_MODEL_NAMES?videoModels[id].label:({runway:'Video option A',minimax:'Video option B · 768p',kling:'Video option C'}[id]);}
