@@ -27,7 +27,8 @@ Sites URL do not automatically appear on the Railway URL.
 
 ## Features
 
-- Start with an empty recipe studio. Browse Examples to explicitly load the pesto pasta walkthrough; examples are labeled and never preloaded for new users.
+- Start with an empty recipe studio. Browse Examples to explicitly load the pesto pasta walkthrough, then use Stop using example to return to importing your own recipe. Example drafts are available in My projects rather than automatically reopening.
+- Explore Our process for an interactive six-stage walkthrough. A live studio tracker explains the current action and shows the active scene during image or video generation.
 
 - Import public HTTPS recipe pages with Schema.org Recipe JSON-LD, including @graph and HowToSection.
 - Use the Send to Simmer browser bookmark, or upload saved HTML / JSON, when a publisher blocks automatic URL requests.

@@ -1,0 +1,26 @@
+'use client';
+import {useState} from 'react';
+import {ArrowRight,Link2,Clapperboard,Image as ImageIcon,CheckCircle2,Film,Download,Music2} from 'lucide-react';
+
+const stages=[
+ {title:'Bring the recipe',verb:'Import',icon:Link2,cost:'No generation credits',description:'Start with a website link, Recipe JSON, or instructions you write yourself. We read the ingredients, steps, and available photos.',detail:'If a publisher blocks automatic imports, use the browser bookmark or a saved recipe file.',before:'A recipe you love',after:'Ingredients + instructions + photos'},
+ {title:'Set up the shots',verb:'Review',icon:Clapperboard,cost:'No generation credits',description:'Turn the instructions into a storyboard you can inspect. Edit a step, supply a photo, or split a long instruction into smaller shots.',detail:'Aim for one visible action per shot. Adding ingredients and whisking often work better as separate shots.',before:'A long recipe step',after:'Smaller, focused shots'},
+ {title:'Fill the missing moments',verb:'Generate images',icon:ImageIcon,cost:'Image credits · confirmation required',description:'Keep supplied photos and generate starting images for scenes that need them. Recipe photos and previous frames can guide visual consistency.',detail:'Choose Generate missing frames when you are ready. Image generation does not start automatically on import.',before:'Photos + missing frames',after:'An image for every scene'},
+ {title:'Give it your approval',verb:'Approve',icon:CheckCircle2,cost:'No generation credits',description:'Check the food stage, ingredients, and utensils in every frame. Edit the image direction or regenerate a frame before approving the storyboard.',detail:'AI can make cooking mistakes. Your review is the checkpoint before video generation.',before:'A complete storyboard',after:'Reviewed starting frames'},
+ {title:'Bring each scene to life',verb:'Animate',icon:Film,cost:'Video credits · confirmation required',description:'Each approved image becomes the starting frame for an AI video clip. A separate motion prompt describes what should move.',detail:'Keep movements simple and inspect the result. Pause and resume unfinished generation; completed clips are reused.',before:'A still frame + motion direction',after:'A short cooking clip'},
+ {title:'Make the final cut',verb:'Export',icon:Download,cost:'Export on your device',description:'Preview the clips, choose optional original background music and captions, then assemble and download your video.',detail:'Keep the tab visible during export. Projects and cached images stay in this browser; download media you want to keep.',before:'Clips + captions + optional music',after:'Your finished recipe video'}
+];
+
+export default function ProcessTour({onStart,onExample}:{onStart:()=>void;onExample:()=>void}){
+ const [selected,setSelected]=useState(0);
+ const stage=stages[selected],Icon=stage.icon;
+ return <section className="process-tour">
+  <div className="page-heading"><div><div className="eyebrow">THE RECIPE BEHIND THE REEL</div><h1>A little prep. A little magic.</h1><p>Follow a recipe from written instructions to a video you can share.</p></div></div>
+  <div className="process-rail" role="tablist" aria-label="Explore our process">{stages.map((item,i)=><button key={item.verb} role="tab" id={`process-tab-${i}`} aria-controls="process-panel" aria-selected={selected===i} tabIndex={selected===i?0:-1} onKeyDown={e=>{const next=e.key==='ArrowRight'?(i+1)%stages.length:e.key==='ArrowLeft'?(i+stages.length-1)%stages.length:e.key==='Home'?0:e.key==='End'?stages.length-1:null;if(next!==null){e.preventDefault();setSelected(next);document.getElementById(`process-tab-${next}`)?.focus();}}} onClick={()=>setSelected(i)}><span>{String(i+1).padStart(2,'0')}</span><item.icon size={20}/><strong>{item.verb}</strong></button>)}</div>
+  <div className="process-focus panel" role="tabpanel" id="process-panel" aria-labelledby={`process-tab-${selected}`}>
+   <div className="process-visual"><span className="eyebrow">STEP {String(selected+1).padStart(2,'0')}</span><div className="process-transformation"><div>{stage.before}</div><span className="process-icon"><Icon size={40}/></span><ArrowRight size={24}/><div className="process-result">{stage.after}</div></div><span className="process-cost">{stage.cost}</span></div>
+   <div className="process-copy"><h2>{stage.title}</h2><p>{stage.description}</p><div className="process-tip">{stage.detail}</div><div className="process-pager"><span>{selected+1} / {stages.length}</span>{selected<stages.length-1?<button className="primary" onClick={()=>setSelected(selected+1)}>Next step<ArrowRight size={16}/></button>:<button className="primary" onClick={onStart}>Open video studio<ArrowRight size={16}/></button>}</div></div>
+  </div>
+  <div className="process-invitation"><Music2 size={24}/><div><h2>Ready to try the process?</h2><p>Bring your own recipe or explore the pesto pasta example. You choose when paid generation starts.</p></div><button className="secondary" onClick={onExample}>Explore the example<ArrowRight size={16}/></button></div>
+ </section>;
+}
