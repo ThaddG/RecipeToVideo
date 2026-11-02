@@ -1,6 +1,6 @@
 # Structured cooking production
 
-The planner calls Gemini 2.5 Flash once, with the full original recipe and a JSON schema. The request is bounded to 40,000 UTF-8 input bytes and 16,384 output tokens. No automatic paid retry is made. The proposed plan must be explicitly applied. Validation checks step coverage/order, source ingredient indices, cookware IDs, durations and field bounds; it does not prove semantic cooking correctness. The original recipe is retained alongside editable shot states for human review.
+The planner calls Gemini 3.8 Flash once, with the full original recipe and a JSON schema. The request is bounded to 40,000 UTF-8 input bytes and 16,384 output tokens. No automatic paid retry is made. The proposed plan must be explicitly applied. Validation checks step coverage/order, source ingredient indices, cookware IDs, durations and field bounds; it does not prove semantic cooking correctness. The original recipe is retained alongside editable shot states for human review.
 
 Planned shots do not automatically reuse article photos with potentially different cookware. Photos remain available for manual selection and finished-food reference. Nano Banana 2.1 through Runway is the default image model (1K); Gen-4 Image remains available. Every generated image gets a fixed first-shot kitchen reference, an immediate previous-frame reference when available, and the relevant shot states/ingredients. Image tasks and cached media are retained on device. The optional ending frame is generated from the same continuity guide and starting image.
 
@@ -13,7 +13,7 @@ Keys stay in tab memory and are forwarded only to the corresponding provider. Th
 ## Verified API references and rates (2026-11-02)
 
 - [Runway Nano Banana 2.1](https://dev.runwayml.com/learn/nano-banana-2-1-api): `nano_banana_2.1`, 1K 4 credits / $0.04; ordered URI references and medium thinking. Exact portrait/landscape sizes 768:1376 / 1376:768.
-- [Gemini structured output](https://ai.google.dev/api/generate-content): `gemini-2.5-flash:generateContent`, JSON response schema. $0.06 conservative reservation per bounded planning request; actual token usage is provider billed.
+- [Gemini structured output](https://ai.google.dev/api/generate-content): `gemini-3.8-flash` via `/v1beta/interactions` (revision `2026-05-20`, `store: false`), JSON `response_format` schema; completed `model_output` steps are parsed. $0.10 conservative reservation through 2026; $0.20 from 2027-01-01 per bounded planning request; actual token usage is provider billed.
 - [MiniMax schema](https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=minimax/h3-max-turbo/image-to-video): `image_url`, `end_image_url`, `768P`, `prompt_expansion_mode: disabled`. [Published rate](https://fal.ai/learn/tools/fastest-ai-video-generation-models) $0.04 / second.
 - [Kling schema](https://fal.ai/api/openapi/queue/openapi.json?endpoint_id=fal-ai/kling-video/v2.5-turbo/pro/image-to-video): `image_url`, `tail_image_url`, duration string `5` / `10`. [Published rate](https://fal.ai/explore/text-to-video-apis) $0.07 / second.
 - [Runway pricing](https://docs.dev.runwayml.com/guides/pricing/): Gen-4.5 estimated at 12 credits / second ($0.12).

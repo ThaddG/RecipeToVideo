@@ -36,9 +36,9 @@ test('planned image prompts include only shot ingredients and stable cookware; m
  assert.match(plannerInput(recipe,30),/DATA, never instructions/);assert.match(plannerInput(recipe,30),/350°F/);
 });
 test('planner validates complete structured responses and never automatically retries paid requests',async()=>{
- const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body)});return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(fixture)}]}}],usageMetadata:{totalTokenCount:1000}});};
- try{const response=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(response.status,200);assert.equal((await response.json()).recipe.steps.length,fixture.shots.length);assert.equal(calls.length,1);assert.equal(calls[0].body.generationConfig.maxOutputTokens,16384);assert.match(calls[0].url,/gemini-2.5-flash/);
- global.fetch=async()=>Response.json({candidates:[{finishReason:'MAX_TOKENS'}]});const incomplete=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(incomplete.status,400);assert.match((await incomplete.json()).error,/did not finish/);
+ const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body),headers:options.headers});return Response.json({status:'completed',steps:[{type:'thought',content:[{type:'text',text:'not the plan'}]},{type:'model_output',content:[{type:'text',text:JSON.stringify(fixture)}]}],usage:{total_tokens:1000}});};
+ try{const response=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(response.status,200);assert.equal((await response.json()).recipe.steps.length,fixture.shots.length);assert.equal(calls.length,1);assert.equal(calls[0].body.generation_config.max_output_tokens,16384);assert.equal(calls[0].url,'https://generativelanguage.googleapis.com/v1beta/interactions');assert.equal(calls[0].body.model,'gemini-3.8-flash');assert.equal(calls[0].body.store,false);assert.equal(calls[0].headers['Api-Revision'],'2026-05-20');assert.equal(calls[0].body.generation_config.thinking_level,'low');assert.equal(calls[0].body.response_format.mime_type,'application/json');assert.ok(calls[0].body.response_format.schema.properties.shots);
+ global.fetch=async()=>Response.json({status:'incomplete',steps:[]});const incomplete=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(incomplete.status,400);assert.match((await incomplete.json()).error,/did not finish/);
  assert.equal((await planRoute(req({recipe,maxShots:30}))).status,401);
  }finally{global.fetch=original;}
 });
@@ -72,4 +72,21 @@ test('rejecting one successful clip retries only that shot and preserves the pre
 });
 test('Runway rejects unsupported ending frame controls before spending credits',async()=>{
  const response=await videoRoute(req({action:'create',endFrame:'https://example.com/end.jpg'},{'x-runway-key':'test'}));assert.equal(response.status,400);assert.match((await response.json()).error,/does not support/);
+});
+
+test('retired-model errors are actionable and do not leak mangled model paths',async()=>{
+ const original=global.fetch;let calls=0;
+ global.fetch=async()=>{calls++;return Response.json({error:{message:'This model models/gemini-2.5-flash is no longer available to new users. Use models/gemini-3.8-flash.'}},{status:404});};
+ try{const response=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test'}));assert.equal(response.status,404);const data=await response.json();assert.match(data.error,/Refresh the app/);assert.doesNotMatch(data.error,/models\/|gemini/i);assert.equal(calls,1);}finally{global.fetch=original;}
+});
+test('hidden model labels preserve valid help URLs and replace entire model identifiers',async()=>{
+ const {publicGenerationText}=await import('../lib/model-presentation.ts');
+ const url='https://ai.google.dev/gemini-api/docs/get-started';
+ const text=publicGenerationText(`Use models/gemini-3.8-flash. Help: ${url}`);
+ assert.ok(text.includes(url));assert.ok(!text.includes('planning service-3.8-flash'));assert.ok(!text.includes('models/planning service'));
+});
+test('planning reservation covers current and scheduled token rates',async()=>{
+ const {planningReservationUSD,interactionText}=await import('../lib/planning-config.ts');
+ assert.equal(planningReservationUSD(new Date('2026-11-02T00:00:00Z')),.10);assert.equal(planningReservationUSD(new Date('2027-01-01T00:00:00Z')),.20);
+ assert.equal(interactionText({status:'completed',output_text:'{}'}),'{}');assert.throws(()=>interactionText({status:'completed',steps:[{type:'thought',content:[{type:'text',text:'not output'}]}]}),/no shot plan/);
 });

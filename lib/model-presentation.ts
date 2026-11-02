@@ -8,14 +8,18 @@ export function imageModelLabel(id:ImageModel){return SHOW_MODEL_NAMES?imageMode
 export function videoModelLabel(id:VideoModel){return SHOW_MODEL_NAMES?videoModels[id].label:({runway:'Video option A',minimax:'Video option B · 768p',kling:'Video option C'}[id]);}
 export function publicGenerationText(value:string){
  if(SHOW_MODEL_NAMES)return value;
- return value
+ const urls:string[]=[];
+ const safe=value.replace(/https?:\/\/[^\s<>"')]+/g,url=>`__HELP_URL_${urls.push(url)-1}__`);
+ return safe
   .replace(/fal-ai\/kling-video\/v2\.5-turbo\/pro(?:\/image-to-video)?/gi,'video option C')
   .replace(/minimax\/h3-max-turbo(?:\/image-to-video)?/gi,'video option B')
   .replace(/nano[_ ]banana[_ ]2\.1|Nano Banana(?: 2\.1)?/gi,'storyboard images')
-  .replace(/Gemini(?:[- ]2\.5[- ]Flash)?/gi,'planning service')
+  .replace(/(?:models\/)?gemini-[a-z0-9][a-z0-9._-]*/gi,'planning service')
+  .replace(/Gemini(?:[- ]\d+(?:\.\d+)?[- ]Flash)?/gi,'planning service')
   .replace(/Runway Gen[- ]?4(?!\.5)(?: Image)?|gen4_image/gi,'image generation')
   .replace(/(?:Runway )?Gen[- ]?4\.5|gen4\.5/gi,'video option A')
   .replace(/MiniMax(?: H3 Max Turbo)?/gi,'video option B')
   .replace(/Kling(?: 2\.5 Turbo Pro)?/gi,'video option C')
-  .replace(/Runway/gi,'generation service');
+  .replace(/Runway/gi,'generation service')
+  .replace(/__HELP_URL_(\d+)__/g,(_,index)=>urls[Number(index)]);
 }
