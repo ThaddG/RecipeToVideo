@@ -1,3 +1,4 @@
+import {validVideoDuration} from './shot-timing';
 import {videoModels,type VideoModel} from './generation-settings';
 import {publicURL} from './network';
 import {validateImageInput} from './storyboard';
@@ -9,13 +10,13 @@ export async function falVideo(request:Request,b:any){
  const headers={'Authorization':`Key ${key}`,'Content-Type':'application/json','X-Fal-No-Retry':'1'};
  let response:Response;
  if(b.action==='create'){
-  if(![5,10].includes(b.duration)||typeof b.motionPrompt!=='string'||!b.motionPrompt.trim()||b.motionPrompt.length>1000)throw new Error('Invalid video duration or motion prompt.');
+  if(!validVideoDuration(model,b.duration)||typeof b.motionPrompt!=='string'||!b.motionPrompt.trim()||b.motionPrompt.length>1000)throw new Error('Invalid video duration or motion prompt.');
   const image=validateImageInput(b.storyboardImage),end=b.endFrame?validateImageInput(b.endFrame):undefined;
   const input=model==='minimax'?{prompt:b.motionPrompt,image_url:image,...(end?{end_image_url:end}:{}),duration:b.duration,resolution:'768P',prompt_expansion_mode:'disabled'}:{prompt:b.motionPrompt,image_url:image,...(end?{tail_image_url:end}:{}),duration:String(b.duration)};
   response=await fetch(root,{method:'POST',headers,body:JSON.stringify(input),signal:AbortSignal.timeout(30000)});
   const data:any=await response.json();if(!response.ok)return Response.json({error:failureMessage(data.detail||data.error||'fal rejected this request.')},{status:response.status});
   if(!data.request_id)throw new Error('fal did not return a request ID. Check provider history before retrying.');
-  return Response.json({id:data.request_id,status:'PENDING',model,provider:'fal'},{headers:{'Cache-Control':'no-store'}});
+  return Response.json({id:data.request_id,duration:b.duration,status:'PENDING',model,provider:'fal'},{headers:{'Cache-Control':'no-store'}});
  }
  if(!['status','media','cancel'].includes(b.action)||typeof b.id!=='string'||!/^[a-zA-Z0-9_-]{1,128}$/.test(b.id))throw new Error('Invalid fal request.');
  // Queue routes are reconstructed from our model allowlist, never client-supplied URLs.

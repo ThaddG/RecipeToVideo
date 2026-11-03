@@ -1,7 +1,7 @@
 import {planImagePrompt} from './shot-plan';
 import type {Recipe,Scene} from './recipe';
 export type StoryboardFrame={taskId?:string;taskSignature?:string;status?:string;imageKey?:string;imageURL?:string;signature?:string;model?:string;endImageURL?:string;endImageKey?:string;endTaskId?:string;endTaskSignature?:string;endStatus?:string;anchorKey?:string;anchorURL?:string;prompt?:string;motion?:string;error?:string};
-export function frameSignature(recipe:Recipe,index:number,format:string,style:string,prompt?:string){return JSON.stringify([recipe.name,recipe.ingredients,recipe.steps[index],recipe.images,...(recipe.production?[recipe.production.bible]:[]),format,style,prompt||'']);}
+export function frameSignature(recipe:Recipe,index:number,format:string,style:string,prompt?:string){const scene=recipe.steps[index];/* Timing does not change a photograph. Keep 5 for compatibility with saved frame signatures. */const visual=scene?.shot?{...scene,shot:{...scene.shot,duration:5}}:scene;return JSON.stringify([recipe.name,recipe.ingredients,visual,recipe.images,...(recipe.production?[recipe.production.bible]:[]),format,style,prompt||'']);}
 export function providedFrame(recipe:Recipe,index:number,useImages:boolean){return useImages?(recipe.steps[index]?.image||(!recipe.production&&index===recipe.steps.length-1?recipe.images[0]:undefined)):undefined;}
 export function validGeneratedFrame(frame:StoryboardFrame|undefined,signature:string){return !!frame?.imageKey&&frame.signature===signature;}
 export function firstAction(text:string){return text.split(/(?<=[.!?])\s+(?=[A-Z])/u)[0].trim();}

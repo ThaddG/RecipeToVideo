@@ -1,4 +1,4 @@
-export type VideoJob={id:string;status:string;output?:string[];failure?:string;failureCode?:string;requestId?:string;previousTaskIds?:string[];model?:string;provider?:string;review?:string;rejected?:boolean;replacedClips?:VideoJob[]};
+export type VideoJob={duration?:number;id:string;status:string;output?:string[];failure?:string;failureCode?:string;requestId?:string;previousTaskIds?:string[];model?:string;provider?:string;review?:string;rejected?:boolean;replacedClips?:VideoJob[]};
 export class VideoRequestError extends Error {
  status:number;retryAfter:number;
  constructor(message:string,status=0,retryAfter=0){super(message);this.status=status;this.retryAfter=retryAfter;}

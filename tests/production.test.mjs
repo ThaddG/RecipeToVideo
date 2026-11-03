@@ -90,3 +90,45 @@ test('planning reservation covers current and scheduled token rates',async()=>{
  assert.equal(planningReservationUSD(new Date('2026-11-02T00:00:00Z')),.10);assert.equal(planningReservationUSD(new Date('2027-01-01T00:00:00Z')),.20);
  assert.equal(interactionText({status:'completed',output_text:'{}'}),'{}');assert.throws(()=>interactionText({status:'completed',steps:[{type:'thought',content:[{type:'text',text:'not output'}]}]}),/no shot plan/);
 });
+
+test('variable shot durations survive planning and portable recipe export, with a strict total budget',()=>{
+ const plan=structuredClone(fixture);plan.shots.forEach((shot,i)=>shot.duration=[2,3,4,5][i%4]);
+ const seconds=plan.shots.reduce((sum,s)=>sum+s.duration,0);
+ const applied=applyShotPlan(recipe,plan,30,seconds);
+ assert.deepEqual(applied.steps.map(s=>s.shot.duration),plan.shots.map(s=>s.duration));
+ assert.deepEqual(parseRecipe({...schema,simmerShotPlan:plan}).steps.map(s=>s.shot.duration),plan.shots.map(s=>s.duration));
+ assert.throws(()=>applyShotPlan(recipe,plan,30,seconds-1),/duration budget/);
+ for(const duration of [1,2.5,6,NaN,'3']){const bad=structuredClone(plan);bad.shots[0].duration=duration;assert.throws(()=>applyShotPlan(recipe,bad),/duration/);}
+ assert.match(plannerInput(recipe,15,30),/totaling at most 30 seconds/);
+});
+test('short video durations reach the providers unchanged; unsupported lengths never create a task',async()=>{
+ const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push(JSON.parse(options.body));return Response.json(String(url).includes('fal.run')?{request_id:'short-task'}:{id:'short-task'});};
+ try{
+  for(const model of ['runway','minimax'])for(const duration of [2,3,4]){
+   const response=await videoRoute(req({action:'create',model,recipe,index:0,format:'9:16',style:'Overhead',duration,storyboardImage:'https://example.com/start.jpg',motionPrompt:'The spoon moves in one circle.'},{'x-runway-key':'test','x-fal-key':'test'}));
+   assert.equal(response.status,200);assert.equal((await response.json()).duration,duration);assert.equal(calls.at(-1).duration,duration);
+  }
+  const count=calls.length;
+  for(const [model,duration] of [['runway',1],['runway',2.5],['minimax',1],['kling',3]])assert.notEqual((await videoRoute(req({action:'create',model,recipe,index:0,format:'9:16',style:'Overhead',duration,storyboardImage:'https://example.com/start.jpg',motionPrompt:'Stir.'},{'x-runway-key':'test','x-fal-key':'test'}))).status,200);
+  assert.equal(calls.length,count);
+ }finally{global.fetch=original;}
+});
+test('timelines and selective-retry costs use actual per-shot lengths and preserve saved task durations',async()=>{
+ const {timelineSeconds,videoEstimate,providerDuration}=await import('../lib/shot-timing.ts');
+ const r={...planned,steps:planned.steps.slice(0,3).map((s,i)=>({...s,shot:{...s.shot,duration:[2,3,5][i]}}))};
+ assert.deepEqual(timelineSeconds(r,5,'runway'),[2,3,5]);
+ assert.equal(videoEstimate(timelineSeconds(r,5,'runway'),[0,2],.12),.84);
+ assert.deepEqual(timelineSeconds(r,5,'kling'),[5,5,5]);assert.equal(providerDuration('kling',6),10);
+ assert.deepEqual(timelineSeconds(r,5,'minimax',[{id:'saved',status:'SUCCEEDED',duration:5}]),[5,3,5]);
+ const jobs=[{id:'keep',status:'SUCCEEDED',duration:5},undefined];
+ await runVideoJobs({count:2,getJob:i=>jobs[i],write:(i,j)=>jobs[i]=j,create:async()=>({id:'new',status:'PENDING',duration:2}),poll:async()=>({id:'new',status:'SUCCEEDED'}),wait:async()=>{}});
+ assert.equal(jobs[0].duration,5);assert.equal(jobs[1].duration,2);
+});
+
+test('changing only shot timing keeps existing storyboard images reusable',()=>{
+ const original=frameSignature(planned,0,'9:16','Overhead');
+ const changed=structuredClone(planned);changed.steps[0].shot.duration=2;
+ assert.equal(frameSignature(changed,0,'9:16','Overhead'),original);
+ changed.steps[0].shot.startState='A visibly different food state';
+ assert.notEqual(frameSignature(changed,0,'9:16','Overhead'),original);
+});

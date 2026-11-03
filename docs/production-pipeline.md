@@ -19,3 +19,11 @@ Keys stay in tab memory and are forwarded only to the corresponding provider. Th
 - [Runway pricing](https://docs.dev.runwayml.com/guides/pricing/): Gen-4.5 estimated at 12 credits / second ($0.12).
 
 `tests/fixtures/cookie-shot-plan.json` is a curated contract fixture, not live model output. Paid generations are not used by the automated test suite.
+
+## Cost-aware shot timing
+
+New projects default to 3 seconds per unplanned scene. AI plans assign individual 2–5 second durations: short setup/details, longer physical actions. The planner defaults to a 30-second total duration budget (raised to at least 2 seconds per source step for long recipes); the shot count is a ceiling rather than a target. Both duration and shot-count limits are validated before a proposed plan can be applied. Complex recipes may need a larger budget; failures leave the original storyboard unchanged and never automatically retry.
+
+Starting-image generation is unchanged. The selected shot duration is sent to video generation, used for spending reservations and the confirmation estimate, and saved alongside the returned task ID. Retries are estimated only for the selected fresh/failed shots. Existing completed or pending jobs are kept. Scene badges, storyboard playback, timeline totals and music duration use the individual shot lengths. Export continues to play actual complete clips, including uploaded footage.
+
+Runway and MiniMax accept short durations in this integration (2–10 seconds); Kling still requires 5 or 10. Kling durations are rounded up before both estimation and submission, with a visible notice. No short-clip savings are claimed for that option. Reference: [Runway durations](https://help.runwayml.com/hc/en-us/articles/46974685288467-Creating-with-Gen-4-5), [MiniMax input schema](https://fal.ai/models/minimax/h3-max-turbo/image-to-video/api), [Kling input schema](https://fal.ai/models/fal-ai/kling-video/v2.5-turbo/pro/image-to-video/api).
