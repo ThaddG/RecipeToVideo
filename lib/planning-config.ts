@@ -11,7 +11,7 @@ export const PLANNER_MAX_OUTPUT_TOKENS=16384;
 // Published rates double on 2027-01-01; reserve conservatively for either period.
 export function planningReservationUSD(date=new Date()){return date.getTime()>=Date.UTC(2027,0,1) ? 0.20 : 0.10;}
 export function planningError(message:string,status?:number){
- if(status===503||/currently experiencing high demand/i.test(message))return 'The planning service rejected this request because it is unavailable or at capacity. Try the alternative planner below using the same connection. Your storyboard has not changed. If both planners fail, check API usage, access and billing in your planning-service account.';
+ if(status===503||/currently experiencing high demand/i.test(message))return 'The planning service rejected this request because it is unavailable or at capacity. Your storyboard has not changed. If both planning buttons fail, run Planning connection diagnostics below to check small requests through the existing service before retrying the recipe.';
  if(/(?:model.*(?:no longer available|not available|not found|unsupported)|not supported.*model)/i.test(message))return 'The planning service is unavailable for this account. Refresh the app and try again. If this continues, check API access in your planning-service account.';
  return message;
 }

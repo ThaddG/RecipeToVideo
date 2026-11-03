@@ -138,7 +138,7 @@ test('a capacity rejection exposes an alternative without automatic retries or c
  const before=JSON.stringify(recipe);
  try{
   const response=await planRoute(req({recipe,maxShots:30,targetSeconds:45},{'x-gemini-key':'test'}));
-  assert.equal(response.status,503);const data=await response.json();assert.equal(data.code,'PLANNER_UNAVAILABLE');assert.match(data.error,/alternative planner/);assert.doesNotMatch(data.error,/gemini/i);assert.equal(calls.length,1);assert.equal(JSON.stringify(recipe),before);
+  assert.equal(response.status,503);const data=await response.json();assert.equal(data.code,'PLANNER_UNAVAILABLE');assert.match(data.error,/Planning connection diagnostics/);assert.doesNotMatch(data.error,/gemini/i);assert.equal(calls.length,1);assert.equal(JSON.stringify(recipe),before);
  }finally{global.fetch=original;}
 });
 test('explicit alternative planning uses the same connection and validates the entire plan and timing budget',async()=>{
