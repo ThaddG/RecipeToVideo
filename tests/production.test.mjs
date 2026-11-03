@@ -132,3 +132,24 @@ test('changing only shot timing keeps existing storyboard images reusable',()=>{
  changed.steps[0].shot.startState='A visibly different food state';
  assert.notEqual(frameSignature(changed,0,'9:16','Overhead'),original);
 });
+
+test('a capacity rejection exposes an alternative without automatic retries or changing the recipe',async()=>{
+ const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push(JSON.parse(options.body));return Response.json({error:{message:'This model is currently experiencing high demand.'}},{status:503});};
+ const before=JSON.stringify(recipe);
+ try{
+  const response=await planRoute(req({recipe,maxShots:30,targetSeconds:45},{'x-gemini-key':'test'}));
+  assert.equal(response.status,503);const data=await response.json();assert.equal(data.code,'PLANNER_UNAVAILABLE');assert.match(data.error,/alternative planner/);assert.doesNotMatch(data.error,/gemini/i);assert.equal(calls.length,1);assert.equal(JSON.stringify(recipe),before);
+ }finally{global.fetch=original;}
+});
+test('explicit alternative planning uses the same connection and validates the entire plan and timing budget',async()=>{
+ const original=global.fetch,calls=[],shortPlan=structuredClone(fixture);shortPlan.shots.forEach(s=>s.duration=2);
+ global.fetch=async(url,options)=>{calls.push({url,headers:options.headers,body:JSON.parse(options.body)});return Response.json({status:'completed',output_text:JSON.stringify(shortPlan)});};
+ try{
+  const response=await planRoute(req({planner:'alternative',recipe,maxShots:30,targetSeconds:45},{'x-gemini-key':'same-connection'}));
+  assert.equal(response.status,200);const data=await response.json();assert.equal(data.model,'gemini-3.1-flash-lite');assert.equal(data.recipe.steps.reduce((n,s)=>n+s.shot.duration,0),44);
+  assert.equal(calls.length,1);assert.equal(calls[0].headers['x-goog-api-key'],'same-connection');assert.equal(calls[0].body.model,'gemini-3.1-flash-lite');assert.equal(calls[0].body.generation_config.max_output_tokens,16384);assert.equal(calls[0].body.generation_config.temperature,undefined);
+  assert.equal((await planRoute(req({planner:'alternative',recipe,maxShots:30,targetSeconds:30},{'x-gemini-key':'same-connection'}))).status,400);
+  const count=calls.length;assert.equal((await planRoute(req({planner:'arbitrary-model',recipe,maxShots:30},{'x-gemini-key':'test'}))).status,400);assert.equal(calls.length,count);
+  const {plannerReservation}=await import('../lib/planning-config.ts');assert.equal(plannerReservation('alternative'),.04);
+ }finally{global.fetch=original;}
+});
