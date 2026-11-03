@@ -14,6 +14,8 @@ export function publicGenerationText(value:string){
   .replace(/fal-ai\/kling-video\/v2\.5-turbo\/pro(?:\/image-to-video)?/gi,'video option C')
   .replace(/minimax\/h3-max-turbo(?:\/image-to-video)?/gi,'video option B')
   .replace(/nano[_ ]banana[_ ]2\.1|Nano Banana(?: 2\.1)?/gi,'storyboard images')
+  .replace(/claude-(?:sonnet|haiku|opus)-[a-z0-9._-]+/gi,'planning service')
+  .replace(/Claude (?:Sonnet|Haiku|Opus)(?: \d+(?:\.\d+)?)?/gi,'planning service')
   .replace(/(?:models\/)?gemini-[a-z0-9][a-z0-9._-]*/gi,'planning service')
   .replace(/Gemini(?:[- ]\d+(?:\.\d+)?[- ]Flash)?/gi,'planning service')
   .replace(/Runway Gen[- ]?4(?!\.5)(?: Image)?|gen4_image/gi,'image generation')

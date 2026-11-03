@@ -37,9 +37,9 @@ test('planned image prompts include only shot ingredients and stable cookware; m
 });
 test('planner validates complete structured responses and never automatically retries paid requests',async()=>{
  const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push({url,body:JSON.parse(options.body),headers:options.headers});return Response.json({status:'completed',steps:[{type:'thought',content:[{type:'text',text:'not the plan'}]},{type:'model_output',content:[{type:'text',text:JSON.stringify(fixture)}]}],usage:{total_tokens:1000}});};
- try{const response=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(response.status,200);assert.equal((await response.json()).recipe.steps.length,fixture.shots.length);assert.equal(calls.length,1);assert.equal(calls[0].body.generation_config.max_output_tokens,16384);assert.equal(calls[0].url,'https://generativelanguage.googleapis.com/v1beta/interactions');assert.equal(calls[0].body.model,'gemini-3.8-flash');assert.equal(calls[0].body.store,false);assert.equal(calls[0].headers['Api-Revision'],'2026-05-20');assert.equal(calls[0].body.generation_config.thinking_level,'low');assert.equal(calls[0].body.response_format.mime_type,'application/json');assert.ok(calls[0].body.response_format.schema.properties.shots);
- global.fetch=async()=>Response.json({status:'incomplete',steps:[]});const incomplete=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(incomplete.status,400);assert.match((await incomplete.json()).error,/did not finish/);
- assert.equal((await planRoute(req({recipe,maxShots:30}))).status,401);
+ try{const response=await planRoute(req({planner:'standard',recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(response.status,200);assert.equal((await response.json()).recipe.steps.length,fixture.shots.length);assert.equal(calls.length,1);assert.equal(calls[0].body.generation_config.max_output_tokens,16384);assert.equal(calls[0].url,'https://generativelanguage.googleapis.com/v1beta/interactions');assert.equal(calls[0].body.model,'gemini-3.8-flash');assert.equal(calls[0].body.store,false);assert.equal(calls[0].headers['Api-Revision'],'2026-05-20');assert.equal(calls[0].body.generation_config.thinking_level,'low');assert.equal(calls[0].body.response_format.mime_type,'application/json');assert.ok(calls[0].body.response_format.schema.properties.shots);
+ global.fetch=async()=>Response.json({status:'incomplete',steps:[]});const incomplete=await planRoute(req({planner:'standard',recipe,maxShots:30},{'x-gemini-key':'test-gemini'}));assert.equal(incomplete.status,400);assert.match((await incomplete.json()).error,/did not finish/);
+ assert.equal((await planRoute(req({planner:'standard',recipe,maxShots:30}))).status,401);
  }finally{global.fetch=original;}
 });
 test('Nano Banana uses ordered dish/anchor/previous references, 1K ratios, and separate ending states',async()=>{
@@ -77,7 +77,7 @@ test('Runway rejects unsupported ending frame controls before spending credits',
 test('retired-model errors are actionable and do not leak mangled model paths',async()=>{
  const original=global.fetch;let calls=0;
  global.fetch=async()=>{calls++;return Response.json({error:{message:'This model models/gemini-2.5-flash is no longer available to new users. Use models/gemini-3.8-flash.'}},{status:404});};
- try{const response=await planRoute(req({recipe,maxShots:30},{'x-gemini-key':'test'}));assert.equal(response.status,404);const data=await response.json();assert.match(data.error,/Refresh the app/);assert.doesNotMatch(data.error,/models\/|gemini/i);assert.equal(calls,1);}finally{global.fetch=original;}
+ try{const response=await planRoute(req({planner:'standard',recipe,maxShots:30},{'x-gemini-key':'test'}));assert.equal(response.status,404);const data=await response.json();assert.match(data.error,/Refresh the app/);assert.doesNotMatch(data.error,/models\/|gemini/i);assert.equal(calls,1);}finally{global.fetch=original;}
 });
 test('hidden model labels preserve valid help URLs and replace entire model identifiers',async()=>{
  const {publicGenerationText}=await import('../lib/model-presentation.ts');
@@ -137,7 +137,7 @@ test('a capacity rejection exposes an alternative without automatic retries or c
  const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push(JSON.parse(options.body));return Response.json({error:{message:'This model is currently experiencing high demand.'}},{status:503});};
  const before=JSON.stringify(recipe);
  try{
-  const response=await planRoute(req({recipe,maxShots:30,targetSeconds:45},{'x-gemini-key':'test'}));
+  const response=await planRoute(req({planner:'standard',recipe,maxShots:30,targetSeconds:45},{'x-gemini-key':'test'}));
   assert.equal(response.status,503);const data=await response.json();assert.equal(data.code,'PLANNER_UNAVAILABLE');assert.match(data.error,/Planning connection diagnostics/);assert.doesNotMatch(data.error,/gemini/i);assert.equal(calls.length,1);assert.equal(JSON.stringify(recipe),before);
  }finally{global.fetch=original;}
 });

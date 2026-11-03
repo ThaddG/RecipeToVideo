@@ -1,10 +1,12 @@
 // Verified against Google's Interactions API documentation on 2026-11-02.
 export const PLANNER_MODEL='gemini-3.8-flash';
 export const ALTERNATIVE_PLANNER_MODEL='gemini-3.1-flash-lite';
-export type PlannerChoice='standard'|'alternative';
-export function plannerModel(choice:PlannerChoice){return choice==='alternative'?ALTERNATIVE_PLANNER_MODEL:PLANNER_MODEL;}
+export const claudePlanners={quality:{model:'claude-sonnet-5-5',effort:'high',reservation:.25},economy:{model:'claude-haiku-5-5',effort:'medium',reservation:.02}} as const;
+export type ClaudePlanner=keyof typeof claudePlanners;
+export type PlannerChoice='standard'|'alternative'|ClaudePlanner;
+export function plannerModel(choice:PlannerChoice){return choice==='quality'||choice==='economy'?claudePlanners[choice].model:choice==='alternative'?ALTERNATIVE_PLANNER_MODEL:PLANNER_MODEL;}
 // 40,000 input tokens at $0.25/M + 16,384 output tokens at $1.50/M < $0.04.
-export function plannerReservation(choice:PlannerChoice){return choice==='alternative'?.04:planningReservationUSD();}
+export function plannerReservation(choice:PlannerChoice){return choice==='quality'||choice==='economy'?claudePlanners[choice].reservation:choice==='alternative'?.04:planningReservationUSD();}
 export const PLANNER_API_REVISION='2026-05-20';
 export const PLANNER_MAX_OUTPUT_TOKENS=16384;
 // 40,000 UTF-8 input bytes (conservative token upper bound) plus the output cap.
