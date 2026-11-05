@@ -5,12 +5,13 @@ export const SHOW_MODEL_NAMES = false;
 export const SHOW_MODEL_CONTROLS = false;
 export function modelCopy(named:string,neutral:string){return SHOW_MODEL_NAMES?named:neutral;}
 export function imageModelLabel(id:ImageModel){return SHOW_MODEL_NAMES?imageModels[id].label:({nano:'Studio images · 1K',runway:'Alternative images'}[id]);}
-export function videoModelLabel(id:VideoModel){return SHOW_MODEL_NAMES?videoModels[id].label:({runway:'Video option A',minimax:'Video option B · 768p',kling:'Video option C'}[id]);}
+export function videoModelLabel(id:VideoModel){return SHOW_MODEL_NAMES?videoModels[id].label:({grok:'Studio video · 720p',runway:'Video option A',minimax:'Video option B · 768p',kling:'Video option C'}[id]);}
 export function publicGenerationText(value:string){
  if(SHOW_MODEL_NAMES)return value;
  const urls:string[]=[];
  const safe=value.replace(/https?:\/\/[^\s<>"')]+/g,url=>`__HELP_URL_${urls.push(url)-1}__`);
  return safe
+  .replace(/grok_imagine_1_5_lite|Grok Imagine(?: Video)? 1\.5 Lite/gi,'studio video')
   .replace(/fal-ai\/kling-video\/v2\.5-turbo\/pro(?:\/image-to-video)?/gi,'video option C')
   .replace(/minimax\/h3-max-turbo(?:\/image-to-video)?/gi,'video option B')
   .replace(/nano[_ ]banana[_ ]2\.1|Nano Banana(?: 2\.1)?/gi,'storyboard images')
