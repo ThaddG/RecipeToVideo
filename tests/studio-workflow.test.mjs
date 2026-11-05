@@ -15,3 +15,9 @@ test('saved image and video work remains resumable, while explicitly returning t
  assert.equal(shotChoiceReady(sampleRecipe,[],[{id:'saved-video',status:'PENDING'}]),true);
  assert.equal(shotChoiceReady({...sampleRecipe,storyboardApproach:'choose'},[{imageKey:'saved-frame'}]),false);
 });
+test('guided navigation permits completed steps and blocks future or invalid stage requests',async()=>{
+ const {guidedStage}=await import('../lib/studio-workflow.ts');
+ assert.equal(guidedStage(0,null),0);assert.equal(guidedStage(1,null),1);assert.equal(guidedStage(2,1),1);assert.equal(guidedStage(3,0),0);
+ for(const requested of [3,-1,1.5,NaN])assert.equal(guidedStage(2,requested),2);
+ assert.equal(guidedStage(3,null),3);
+});

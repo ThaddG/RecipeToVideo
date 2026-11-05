@@ -34,3 +34,30 @@
 .planner-controls .planning-choice-help{flex-basis:100%;margin:0;max-width:760px}.workflow-step strong{overflow-wrap:anywhere}
 
 @media(max-width:760px){.workflow-tracker .workflow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* One task at a time; stages mount with a quiet entrance instead of hiding live controls. */
+.workflow-step{background:transparent;text-align:left;padding:0;transition:opacity .18s ease,color .18s ease}
+.workflow-step:disabled{opacity:.45;cursor:default}.workflow-step.current:disabled{opacity:1}
+.guided-navigation{display:flex;align-items:center;gap:18px;margin:0 0 20px;color:#839177;font-size:12px}
+.guided-navigation .text-button{font-size:12px}.guided-navigation>span:first-of-type{white-space:nowrap}
+.guided-recipe-name{margin-left:auto;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#466248}
+.studio-grid.guided-stage,.studio-grid.guided-stage.awaiting-recipe{grid-template-columns:minmax(0,1fr);max-width:1000px;margin:0 auto;animation:guided-enter .24s ease-out;outline:none}
+.guided-stage .recipe-entry{max-width:850px;margin:0 auto}.guided-stage .shot-workbench{margin-top:0;border-top:0;padding-top:0}
+.guided-stage .output-panel{width:100%;max-width:800px;margin:0 auto;position:static}.guided-stage .preview-stage{height:420px}.guided-stage .preview-stage.landscape{height:330px}
+.guided-stage .scene-image{height:clamp(120px,14vw,180px)}.guided-stage .scene-card h3{font-size:12px}.guided-stage .scene-card>p{font-size:11px}
+.guided-continue{margin-top:24px}.guided-scene-details,.guided-video-settings,.guided-clip-review{border-top:1px solid var(--line);margin-top:22px;padding-top:16px}
+.guided-scene-details>summary,.guided-video-settings>summary,.guided-clip-review>summary{cursor:pointer;font-size:13px;color:#466644;font-weight:550}
+.guided-scene-select{display:grid;gap:8px;font-size:12px;margin:20px 0}.guided-scene-select select{width:100%;font-size:12px}
+.guided-video-settings .settings-section{border-top:0}.guided-stage .clip-review{border-bottom:0;margin-bottom:0}.guided-stage .generate-section>.secondary{margin-top:0}
+@keyframes guided-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:760px){.guided-navigation{gap:12px;font-size:11px}.guided-stage .preview-stage{height:380px}.guided-stage .preview-stage.landscape{height:230px}.guided-stage .scene-image{height:130px}}
+@media(prefers-reduced-motion:reduce){.studio-grid.guided-stage{animation:none}.workflow-step{transition:none}}
+
+.planner-preferences{flex-basis:100%;margin-bottom:8px}.planner-preferences>summary,.guided-frame-settings>summary{cursor:pointer;font-size:13px;color:#466644;font-weight:550;margin:0}
+.planner-preferences>summary span,.guided-frame-settings>summary span{display:inline-block;font-size:11px;font-weight:400;color:#8b987f;margin-left:10px}
+.planner-preference-fields{display:flex;flex-wrap:wrap;align-items:end;gap:16px;margin:18px 0}.planner-preference-fields label{display:grid;gap:8px;font-size:12px}.planner-preference-fields select{font-size:12px;min-width:160px}
+.guided-frame-settings{margin:0 0 24px;padding-bottom:18px;border-bottom:1px solid var(--line)}.guided-frame-settings p{font-size:12px;color:#839177}.planner-preference-fields .guided-checkbox{display:flex;align-items:center;gap:8px;padding:10px 0}
+.guided-stage .storyboard-workflow{position:relative}.guided-stage .recipe-card{margin-top:24px}.guided-stage .output-panel .section-heading h2{font-size:20px}
+@media(max-width:760px){.planner-preference-fields{align-items:stretch;flex-direction:column}.planner-preferences{width:100%}.planner-preference-fields select{width:100%}}
+
+.guided-single-shot{margin:0 0 18px}.guided-single-shot>summary{cursor:pointer;font-size:13px;color:#466644}.guided-single-shot>button{margin-top:12px}

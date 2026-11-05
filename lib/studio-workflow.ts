@@ -7,3 +7,7 @@ export function shotChoiceReady(recipe:Recipe,frames:StoryboardFrame[]=[],jobs:V
  if(recipe.storyboardApproach==='choose')return false;
  return recipe.storyboardApproach==='original'||frames.some(f=>!!(f?.imageKey||f?.taskId||f?.status));
 }
+
+export function guidedStage(reached:number,requested:number|null){
+ return requested!==null&&Number.isInteger(requested)&&requested>=0&&requested<=reached?requested:reached;
+}
