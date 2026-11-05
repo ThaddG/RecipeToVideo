@@ -2,7 +2,7 @@ import {applyShotPlan} from './shot-plan';
 import type {Shot,ProductionPlan} from './shot-plan';
 import {articlePhotos,normalizePhotos,matchArticlePhotos,type ArticlePhoto} from './article-photos';
 export type Scene = { title: string; text: string; image?: string; imageMatch?:string; shot?:Shot };
-export type Recipe = { name: string; description: string; ingredients: string[]; steps: Scene[]; images: string[]; totalTime: string; yield: string; source?: string; photos?:ArticlePhoto[]; production?:ProductionPlan };
+export type Recipe = { storyboardApproach?:'original'|'choose';name: string; description: string; ingredients: string[]; steps: Scene[]; images: string[]; totalTime: string; yield: string; source?: string; photos?:ArticlePhoto[]; production?:ProductionPlan };
 const clean = (s: unknown) => typeof s === 'string' ? s.replace(/<[^>]*>/g, '').replace(/&(?:amp|nbsp|quot|apos|lt|gt|#39|#34);/g, x => ({'&amp;':'&','&nbsp;':' ','&quot;':'"','&apos;':"'",'&#39;':"'",'&#34;':'"','&lt;':'<','&gt;':'>'}[x] || x)).replace(/\s+/g, ' ').trim() : '';
 function urls(v: any, base?: string): string[] {
  return (Array.isArray(v) ? v : [v]).flatMap(x => {
