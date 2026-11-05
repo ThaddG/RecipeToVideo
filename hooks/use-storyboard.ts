@@ -35,14 +35,14 @@ export function useStoryboard({recipe,format,style,useImages,projectId,apiKey,fr
     const resume=frame.taskId&&frame.taskSignature===taskSignature&&!['FAILED','CANCELLED','DELETED','SUBMITTING','SUBMISSION_UNKNOWN','NOT_SUBMITTED'].includes(frame.status||'')&&!(force&&frame.status==='SUCCEEDED');
     if(!resume){
      if(['SUBMITTING','SUBMISSION_UNKNOWN'].includes(frame.status||''))throw new Error(`Image ${index+1} has an unconfirmed request. Check Runway task history and link its task ID before paying again.`);
-     let previousFrame:string|undefined,anchorFrame:string|undefined;
-     if(index>0){try{previousFrame=await input(index-1);}catch{}}
+     let previousFrame:string|undefined,anchorFrame:string|undefined,previousFramePhase:'start'|'end'='start';
+     if(index>0){try{previousFrame=await endInput(index-1);if(previousFrame)previousFramePhase='end';else previousFrame=await input(index-1);}catch{try{previousFrame=await input(index-1);}catch{}}}
      try{const anchor=records.current[0];if(anchor?.anchorKey){const blob=await loadFrame(anchor.anchorKey);anchorFrame=blob?await imageDataURL(blob):anchor.anchorURL;}else if(index>0)anchorFrame=await input(0);}catch{}
      if(!active())break;
      const submissionId=crypto.randomUUID();beforeCreate?.(submissionId,imageModels[imageModel].usd);
      update(index,{taskId:undefined,status:'SUBMITTING',error:undefined},expectedScope);
      let result;
-     try{result=await api({action:'create',recipe,index,format,style,useImages,prompt:frame.prompt,previousFrame,anchorFrame,imageModel});}
+     try{result=await api({action:'create',recipe,index,format,style,useImages,prompt:frame.prompt,previousFrame,previousFramePhase,anchorFrame,imageModel});}
      catch(error){const rejected=error instanceof VideoRequestError&&[400,401,402,403,413,415,422,429].includes(error.status);update(index,{taskId:undefined,status:rejected?'NOT_SUBMITTED':'SUBMISSION_UNKNOWN',error:rejected?'Provider rejected this request.':'Check provider history before retrying this image.'},expectedScope);throw error;}
 
      if(!result.id)throw new Error('Runway did not return an image task ID.');

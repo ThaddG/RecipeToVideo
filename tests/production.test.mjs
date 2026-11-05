@@ -153,3 +153,38 @@ test('explicit alternative planning uses the same connection and validates the e
   const {plannerReservation}=await import('../lib/planning-config.ts');assert.equal(plannerReservation('alternative'),.04);
  }finally{global.fetch=original;}
 });
+
+test('bridge planning preserves assigned process photos and hero exactly once, and refuses dropped or duplicated anchors',async()=>{
+ const {photoAnchors}=await import('../lib/shot-plan.ts');
+ const source=structuredClone(recipe);source.steps[0].image='https://example.com/process.jpg';source.steps[0].imageMatch='Prepared ingredients in saucepan';
+ const anchors=photoAnchors(source),plan=structuredClone(fixture);plan.shots.forEach(s=>s.sourcePhotoId='');
+ for(const anchor of anchors){const matches=plan.shots.filter(s=>s.sourceStep===anchor.sourceStep);matches.at(-1).sourcePhotoId=anchor.id;}
+ const result=applyShotPlan(source,plan);
+ assert.deepEqual(result.steps.filter(s=>s.image).map(s=>s.image),anchors.map(a=>a.url));
+ assert.equal(result.production.continuityVersion,2);assert.deepEqual(result.production.originalSteps,source.steps);
+ const text=plannerInput(source,30);assert.ok(text.includes('https://example.com/process.jpg'));assert.match(text,/BRIDGES GAPS/);assert.match(text,/already completed/i);
+ const dropped=structuredClone(plan);dropped.shots.find(s=>s.sourcePhotoId).sourcePhotoId='';assert.throws(()=>applyShotPlan(source,dropped),/omitted an existing photo/);
+ const duplicate=structuredClone(plan);const anchor=anchors[0],indices=duplicate.shots.flatMap((s,i)=>s.sourceStep===anchor.sourceStep?[i]:[]);duplicate.shots[indices[0]].sourcePhotoId=anchor.id;assert.throws(()=>applyShotPlan(source,duplicate),/duplicated/);
+ const invented=structuredClone(plan);invented.shots[0].sourcePhotoId='made-up';assert.throws(()=>applyShotPlan(source,invented),/source photo/);
+});
+test('food state handoffs follow the current vessel across intervening scenes and invalidate dependent new frames',async()=>{
+ const {foodStateContext}=await import('../lib/shot-plan.ts');
+ const r=structuredClone(planned);r.production.continuityVersion=2;
+ r.steps=r.steps.slice(0,4);r.steps.forEach(s=>{s.shot.vesselIds=['pot'];s.shot.toolIds=[];});
+ r.steps[0].shot.endState='Milk already fills the saucepan to 2 cm.';
+ r.steps[1].shot.vesselIds=['bowl'];r.steps[1].shot.endState='Egg yolks in the bowl.';
+ r.steps[2].shot.startState='Cream jug poised above the saucepan containing the milk.';
+ assert.match(foodStateContext(r,2),/Milk already fills/);assert.match(foodStateContext(r,2),/Egg yolks/);
+ const prompt=planImagePrompt(r,2);assert.match(prompt,/ALREADY completed/);assert.match(prompt,/BEFORE the action/);
+ assert.match(imagePrompt(r,2,'Overhead','Close crop.'),/Milk already fills/);
+ const signature=frameSignature(r,2,'9:16','Overhead');r.steps[0].shot.endState='Milk fills the saucepan to 4 cm.';assert.notEqual(frameSignature(r,2,'9:16','Overhead'),signature);
+ const timing=frameSignature(r,2,'9:16','Overhead');r.steps[0].shot.duration=2;assert.equal(frameSignature(r,2,'9:16','Overhead'),timing);
+});
+test('image requests distinguish previous starting setups from completed ending frames without extra paid requests',async()=>{
+ const original=global.fetch,calls=[];global.fetch=async(url,options)=>{calls.push(JSON.parse(options.body));return Response.json({id:'image-handoff'});};
+ try{const options={action:'create',recipe:planned,index:2,format:'9:16',style:'Overhead',useImages:true,imageModel:'nano',previousFrame:'https://example.com/previous.jpg'};
+ assert.equal((await imageRoute(req(options,{'x-runway-key':'test'}))).status,200);assert.match(calls[0].promptText,/START image, NOT its result/);
+ assert.equal((await imageRoute(req({...options,previousFramePhase:'end'},{'x-runway-key':'test'}))).status,200);assert.match(calls[1].promptText,/END image; its action has completed/);
+ assert.equal(calls.length,2);
+ }finally{global.fetch=original;}
+});

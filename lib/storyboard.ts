@@ -1,13 +1,13 @@
-import {planImagePrompt} from './shot-plan';
+import {planImagePrompt,foodStateContext} from './shot-plan';
 import type {Recipe,Scene} from './recipe';
 export type StoryboardFrame={taskId?:string;taskSignature?:string;status?:string;imageKey?:string;imageURL?:string;signature?:string;model?:string;endImageURL?:string;endImageKey?:string;endTaskId?:string;endTaskSignature?:string;endStatus?:string;anchorKey?:string;anchorURL?:string;prompt?:string;motion?:string;error?:string};
-export function frameSignature(recipe:Recipe,index:number,format:string,style:string,prompt?:string){const scene=recipe.steps[index];/* Timing does not change a photograph. Keep 5 for compatibility with saved frame signatures. */const visual=scene?.shot?{...scene,shot:{...scene.shot,duration:5}}:scene;return JSON.stringify([recipe.name,recipe.ingredients,visual,recipe.images,...(recipe.production?[recipe.production.bible]:[]),format,style,prompt||'']);}
+export function frameSignature(recipe:Recipe,index:number,format:string,style:string,prompt?:string){const scene=recipe.steps[index];/* Timing does not change a photograph. Keep 5 for compatibility with saved frame signatures. */const visual=scene?.shot?{...scene,shot:{...scene.shot,duration:5}}:scene;return JSON.stringify([recipe.name,recipe.ingredients,visual,recipe.images,...(recipe.production?[recipe.production.bible]:[]),format,style,prompt||'',...(recipe.production?.continuityVersion===2?[foodStateContext(recipe,index)]:[])]);}
 export function providedFrame(recipe:Recipe,index:number,useImages:boolean){return useImages?(recipe.steps[index]?.image||(!recipe.production&&index===recipe.steps.length-1?recipe.images[0]:undefined)):undefined;}
 export function validGeneratedFrame(frame:StoryboardFrame|undefined,signature:string){return !!frame?.imageKey&&frame.signature===signature;}
 export function firstAction(text:string){return text.split(/(?<=[.!?])\s+(?=[A-Z])/u)[0].trim();}
 export function splitScene(scene:Scene):Scene[]{const parts=scene.text.split(/(?<=[.!?])\s+(?=[A-Z])/u);const shots:string[]=[];for(const part of parts){if(part.length<45&&shots.length)shots[shots.length-1]+=' '+part;else shots.push(part);}return shots.map((text,i)=>({title:`${scene.title} · Shot ${i+1}`,text,...(i===0&&scene.image?{image:scene.image,...(scene.imageMatch?{imageMatch:scene.imageMatch}:{})}:{})}));}
 export function imagePrompt(recipe:Recipe,index:number,style:string,custom?:string,references:{dish?:boolean;previous?:boolean}={dish:!!recipe.images?.length}){
- if(custom?.trim()){if(custom.trim().length>1000)throw new Error('Image prompts must be 1,000 characters or fewer.');return custom.trim();}
+ if(custom?.trim()){if(custom.trim().length>1000)throw new Error('Image prompts must be 1,000 characters or fewer.');return recipe.steps[index].shot?`${planImagePrompt(recipe,index)} Additional image direction: ${custom.trim()}`:custom.trim();}
  if(recipe.steps[index].shot)return planImagePrompt(recipe,index);
  const action=firstAction(recipe.steps[index].text);
  const camera=style==='Overhead'?'Overhead, locked camera.':style==='Rustic'?'Warm rustic kitchen, natural light.':'Natural daylight, realistic cooking photography.';

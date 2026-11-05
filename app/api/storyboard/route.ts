@@ -20,7 +20,7 @@ export async function POST(request:Request){
    if(body.phase&&body.phase!=='end')throw new Error('Invalid image phase.');
    if(body.phase==='end'&&!body.recipe.steps[body.index].shot)throw new Error('Plan an ending state first.');
    let promptText=body.phase==='end'?planImagePrompt(body.recipe,body.index,'end'):imagePrompt(body.recipe,body.index,body.style,body.prompt,{dish:referenceImages.some(r=>r.tag==='dish'),previous:referenceImages.some(r=>r.tag==='previous')});
-   const roles=referenceImages.map((r,i)=>`${nano?'Reference '+(i+1):'@'+r.tag}: ${r.tag==='dish'?'finished food appearance only':r.tag==='anchor'?'fixed kitchen, vessel geometry, lighting and tool identity':'previous shot food state; change only what this shot requires'}`).join('. ');
+   const roles=referenceImages.map((r,i)=>`${nano?'Reference '+(i+1):'@'+r.tag}: ${r.tag==='dish'?'finished food appearance only':r.tag==='anchor'?'fixed kitchen, vessel geometry, lighting and tool identity':body.phase==='end'?'current shot START image; depict the planned END state':body.previousFramePhase==='end'?'previous shot END image; its action has completed. Carry that result forward':'previous shot START image, NOT its result. Its action has since completed; update contents and texture to the food-state handoff before staging this shot'}`).join('. ');
    if(roles&&(nano||body.recipe.production||body.anchorFrame))promptText+=' '+roles+'.';
    if(promptText.length>(nano?5500:1000))throw new Error(nano?'Shorten the shot direction.':'This detailed shot requires Nano Banana 2.1, or a shorter custom image direction.');
    providerRequestStarted=true;
