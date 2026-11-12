@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { exportVideo } from '../lib/export-video.ts';
+import { exportVideo,mp4RecordingType,verifyMp4Recording } from '../lib/export-video.ts';
 
 const recipe = { steps: [{ text: 'Mix the ingredients.' }, { text: 'Serve in warm bowls.' }] };
 const clips = () => [new Blob(['first clip']), new Blob(['second clip'])];
 
 function browser(options = {}) {
-  const events = [], urls = [], revoked = [], videos = [];
+  const events = [], urls = [], revoked = [], videos = [], probes = [], recorderOptions = [];
   const originals = new Map();
   function replace(object, key, value) {
     const descriptor = Object.getOwnPropertyDescriptor(object, key);
@@ -36,9 +36,9 @@ function browser(options = {}) {
     load() {}
   }
   class Recorder {
-    static isTypeSupported() { return true; }
+    static isTypeSupported(type) { probes.push(type); return options.supportedTypes ? options.supportedTypes.includes(type) : type.startsWith('video/mp4'); }
     state = 'inactive';
-    constructor() { if (options.constructorError) throw new Error('Recorder setup failed'); }
+    constructor(stream,settings) { recorderOptions.push(settings); if (options.constructorError) throw new Error('Recorder setup failed'); }
     start() {
       events.push('start'); this.state = 'recording';
       if (options.recorderError) queueMicrotask(() => { this.state = 'inactive'; this.onerror?.({}); });
@@ -48,7 +48,7 @@ function browser(options = {}) {
     stop() {
       events.push('stop'); this.state = 'inactive';
       queueMicrotask(() => {
-        this.ondataavailable?.({ data: new Blob(options.emptyOutput ? [] : ['recorded video']) });
+        this.ondataavailable?.({ data: new Blob(options.emptyOutput ? [] : [options.recordedData || new Uint8Array([0,0,0,24,102,116,121,112,105,115,111,109,0,0,0,0,105,115,111,109,109,112,52,50])]) });
         this.onstop?.();
       });
     }
@@ -62,7 +62,7 @@ function browser(options = {}) {
   replace(globalThis, 'cancelAnimationFrame', timer => clearTimeout(timer));
   replace(URL, 'createObjectURL', () => { const url = `blob:test-${urls.length}`; urls.push(url); return url; });
   replace(URL, 'revokeObjectURL', url => revoked.push(url));
-  return { events, urls, revoked, videos, restore() {
+  return { events, urls, revoked, videos, probes, recorderOptions, restore() {
     for (const [[object, key], descriptor] of originals) {
       if (descriptor) Object.defineProperty(object, key, descriptor); else delete object[key];
     }
@@ -78,6 +78,9 @@ test('records scenes in order, pauses between scenes, and releases media resourc
   try {
     const result = await exportVideo(clips(), recipe, '9:16', true, n => progress.push(n));
     assert.ok(result.size > 0);
+    assert.equal(result.type, 'video/mp4');
+    assert.match(h.recorderOptions[0].mimeType,/^video\/mp4;codecs=avc1/);
+    assert.ok(h.probes.every(type=>type.startsWith('video/mp4')));
     assert.deepEqual(h.events, ['start', 'pause', 'resume', 'pause', 'stop', 'track stopped']);
     assert.equal(progress.at(-1), 1);
     assert.deepEqual(h.revoked, h.urls);
@@ -105,7 +108,7 @@ for (const [option, pattern] of [
 test('music is attached to the recording and follows the scene timeline', async () => {
  const h=browser(),plays=[];let pauses=0;
  const session={stream:{getAudioTracks:()=>[{kind:'audio'}]},play:(...args)=>plays.push(args),pause:()=>pauses++};
- try{const result=await exportVideo(clips(),recipe,'9:16',true,()=>{},{session,duration:.02});assert.match(result.type,/opus/);assert.equal(h.events[0],'attached audio');assert.deepEqual(plays,[[0,.01,.02],[.01,.01,.02]]);assert.ok(pauses>=3);}finally{h.restore();}
+ try{const result=await exportVideo(clips(),recipe,'9:16',true,()=>{},{session,duration:.02});assert.equal(result.type,'video/mp4');assert.match(h.recorderOptions[0].mimeType,/mp4a\.40\.2/);assert.equal(h.events[0],'attached audio');assert.deepEqual(plays,[[0,.01,.02],[.01,.01,.02]]);assert.ok(pauses>=3);}finally{h.restore();}
 });
 test('music pauses and capture stops if rendering fails',async()=>{
  const h=browser({drawError:true});let pauses=0;
@@ -115,4 +118,25 @@ test('music pauses and capture stops if rendering fails',async()=>{
 test('an unavailable audio track fails instead of silently exporting without music',async()=>{
  const h=browser();const session={stream:{getAudioTracks:()=>[]},pause:()=>{}};
  try{await assert.rejects(()=>exportVideo(clips(),recipe,'9:16',true,()=>{},{session,duration:.02}),/music track is unavailable/);assert.ok(h.events.includes('track stopped'));}finally{h.restore();}
+});
+
+
+test('generic native MP4 remains available when explicit H.264 codec profiles are unsupported',async()=>{
+ const h=browser({supportedTypes:['video/mp4']});
+ try{const result=await exportVideo(clips(),recipe,'16:9',false,()=>{});assert.equal(result.type,'video/mp4');assert.equal(h.recorderOptions[0].mimeType,'video/mp4');}finally{h.restore();}
+});
+test('a WebM-only browser fails before recording rather than downloading a different format',async()=>{
+ const h=browser({supportedTypes:['video/webm;codecs=vp9','video/webm']});
+ try{await assert.rejects(()=>exportVideo(clips(),recipe,'9:16',false,()=>{}),/cannot record MP4/);assert.equal(h.recorderOptions.length,0);assert.equal(h.urls.length,0);assert.deepEqual(h.events,[]);}finally{h.restore();}
+});
+test('music requires MP4 support and is never silently exported as WebM',()=>{
+ const h=browser({supportedTypes:['video/webm;codecs=vp9,opus']});
+ try{assert.throws(()=>mp4RecordingType(true),/cannot record MP4 with background music/);assert.ok(h.probes.every(type=>type.startsWith('video/mp4')));}finally{h.restore();}
+});
+test('a WebM file mislabeled video/mp4 is rejected and all capture resources are released',async()=>{
+ const h=browser({recordedData:new Uint8Array([0x1a,0x45,0xdf,0xa3,...Array(20).fill(0)])});
+ try{await assert.rejects(()=>exportVideo(clips(),recipe,'9:16',false,()=>{}),/did not produce a valid MP4/);assert.ok(h.events.includes('track stopped'));assert.deepEqual(h.revoked,h.urls);}finally{h.restore();}
+});
+test('truncated or non-MP4 headers are rejected independently of their MIME labels',async()=>{
+ for(const data of [new Uint8Array(0),new Uint8Array(12),new TextEncoder().encode('not an mp4 recording')])await assert.rejects(()=>verifyMp4Recording(new Blob([data],{type:'video/mp4'})),/valid MP4/);
 });
