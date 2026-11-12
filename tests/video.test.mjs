@@ -47,3 +47,10 @@ test('new and previous-default projects switch to Grok without changing reservat
  assert.ok(Math.abs(videoEstimate(Array(10).fill(3),Array.from({length:10},(_,i)=>i),model.perSecond,model.perShot)-1)<1e-9);
  assert.ok(Math.abs(videoEstimate([3,5],[1],model.perSecond,model.perShot)-.16)<1e-9);assert.equal(providerDuration('grok',2),2);
 });
+test('model presentation defaults to neutral labels and reveals provider names when enabled',async()=>{
+ const {SHOW_MODEL_NAMES,SHOW_MODEL_CONTROLS,modelCopy,videoModelLabel,publicGenerationText}=await import('../lib/model-presentation.ts');
+ assert.equal(SHOW_MODEL_NAMES,false);assert.equal(SHOW_MODEL_CONTROLS,false);
+ assert.equal(modelCopy('Grok','Studio video'),'Studio video');assert.equal(modelCopy('Grok','Studio video',true),'Grok');
+ assert.equal(videoModelLabel('grok'),'Studio video · 720p');assert.equal(videoModelLabel('grok',true),'Grok Imagine 1.5 Lite · 720p');
+ assert.equal(publicGenerationText('Runway failed'),'generation service failed');assert.equal(publicGenerationText('Runway failed',true),'Runway failed');
+});

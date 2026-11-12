@@ -3,11 +3,11 @@ import {imageModels,videoModels,type ImageModel,type VideoModel} from './generat
 // Temporary presentation switch. Provider IDs, saved preferences and billing stay intact.
 export const SHOW_MODEL_NAMES = false;
 export const SHOW_MODEL_CONTROLS = false;
-export function modelCopy(named:string,neutral:string){return SHOW_MODEL_NAMES?named:neutral;}
-export function imageModelLabel(id:ImageModel){return SHOW_MODEL_NAMES?imageModels[id].label:({nano:'Studio images · 1K',runway:'Alternative images'}[id]);}
-export function videoModelLabel(id:VideoModel){return SHOW_MODEL_NAMES?videoModels[id].label:({grok:'Studio video · 720p',runway:'Video option A',minimax:'Video option B · 768p',kling:'Video option C'}[id]);}
-export function publicGenerationText(value:string){
- if(SHOW_MODEL_NAMES)return value;
+export function modelCopy(named:string,neutral:string,showNames=SHOW_MODEL_NAMES){return showNames?named:neutral;}
+export function imageModelLabel(id:ImageModel,showNames=SHOW_MODEL_NAMES){return showNames?imageModels[id].label:({nano:'Studio images · 1K',runway:'Alternative images'}[id]);}
+export function videoModelLabel(id:VideoModel,showNames=SHOW_MODEL_NAMES){return showNames?videoModels[id].label:({grok:'Studio video · 720p',runway:'Video option A',minimax:'Video option B · 768p',kling:'Video option C'}[id]);}
+export function publicGenerationText(value:string,showNames=SHOW_MODEL_NAMES){
+ if(showNames)return value;
  const urls:string[]=[];
  const safe=value.replace(/https?:\/\/[^\s<>"')]+/g,url=>`__HELP_URL_${urls.push(url)-1}__`);
  return safe
