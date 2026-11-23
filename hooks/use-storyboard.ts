@@ -5,17 +5,24 @@ import {imageModels,type ImageModel} from '../lib/generation-settings';
 import type {Recipe} from '../lib/recipe';
 import {frameSignature,providedFrame,validGeneratedFrame,type StoryboardFrame} from '../lib/storyboard';
 import {compactFrame,imageDataURL,loadFrame,saveFrame} from '../lib/frame-cache';
+/** A Runway task as relayed by /api/storyboard. */
+type StoryboardTask={id?:string;status:string;output?:string[];failure?:string};
 export function useStoryboard({recipe,format,style,useImages,projectId,apiKey,frames,setFrames,onError,onSelect,imageModel='nano',beforeCreate,onPersistFrames,transport=fetch}:{imageModel?:ImageModel;beforeCreate?:(id:string,usd:number)=>void;onPersistFrames?:(frames:StoryboardFrame[])=>void;transport?:typeof fetch;recipe:Recipe;format:string;style:string;useImages:boolean;projectId:string;apiKey:string;frames:StoryboardFrame[];setFrames:Dispatch<SetStateAction<StoryboardFrame[]>>;onError:(message:string)=>void;onSelect:(index:number)=>void}){
  const [generating,setGenerating]=useState(false),[urls,setURLs]=useState<Record<string,string>>({}),[broken,setBroken]=useState<Record<number,string>>({});
  const records=useRef(frames),run=useRef(0),cancel=useRef(false);records.current=frames;
  const scope=JSON.stringify([projectId,recipe,format,style,useImages]),scopeRef=useRef(scope);scopeRef.current=scope;
- useEffect(()=>{setGenerating(false);return()=>{run.current++;cancel.current=true;};},[scope]);
+ // Clear the spinner while rendering when the scope changes; the effect only cancels the old run.
+ const [generatingScope,setGeneratingScope]=useState(scope);
+ if(generatingScope!==scope){setGeneratingScope(scope);setGenerating(false);}
+ useEffect(()=>()=>{run.current++;cancel.current=true;},[scope]);
  const keys=JSON.stringify(frames.map(f=>f?.imageKey||''));
  useEffect(()=>{let live=true;const created:string[]=[];const next:Record<string,string>={};Promise.all(JSON.parse(keys).filter(Boolean).map(async(key:string)=>{try{const blob=await loadFrame(key);if(blob&&live){const uri=URL.createObjectURL(blob);created.push(uri);next[key]=uri;}}catch{}})).then(()=>{if(live)setURLs(next);});return()=>{live=false;created.forEach(u=>URL.revokeObjectURL(u));};},[keys]);
  const sources=recipe.steps.map((_,i)=>{const f=frames[i],signature=frameSignature(recipe,i,format,style,f?.prompt);const image=validGeneratedFrame(f,signature)?urls[f.imageKey!]||f.imageURL:providedFrame(recipe,i,useImages);return image&&broken[i]!==image?image:undefined;});
  const missing=sources.flatMap((image,i)=>image?[]:[i]),pending=frames.flatMap((f,i)=>['PENDING','RUNNING','THROTTLED','SUBMITTING','SUBMISSION_UNKNOWN'].includes(f?.status||'')?[i]:[]);
  const signature=JSON.stringify([scope,frames.map(f=>[f?.imageKey,f?.signature,f?.prompt,f?.motion,f?.endImageURL,f?.endTaskSignature]),sources.map((s,i)=>!!s&&broken[i]!==s)]);
- async function api(body:object,media=false):Promise<any>{const response=await transport('/api/storyboard',{method:'POST',headers:{'Content-Type':'application/json','x-runway-key':apiKey},body:JSON.stringify(body)});if(!response.ok){const data:any=await response.json();throw new VideoRequestError(typeof data.error==='string'?data.error:JSON.stringify(data.error),response.status);}return media?response.blob():response.json();}
+ function api(body:object,media:true):Promise<Blob>;
+ function api(body:object,media?:false):Promise<StoryboardTask>;
+ async function api(body:object,media=false):Promise<Blob|StoryboardTask>{const response=await transport('/api/storyboard',{method:'POST',headers:{'Content-Type':'application/json','x-runway-key':apiKey},body:JSON.stringify(body)});if(!response.ok){const data=await response.json() as {error?:unknown};throw new VideoRequestError(typeof data.error==='string'?data.error:JSON.stringify(data.error),response.status);}return media?response.blob():response.json();}
  async function input(index:number):Promise<string>{
   const frame=records.current[index];
   if(validGeneratedFrame(frame,frameSignature(recipe,index,format,style,frame?.prompt))){

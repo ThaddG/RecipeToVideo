@@ -3,7 +3,10 @@ import type { MusicSession } from './music';
 
 function waitForVideo(video: HTMLVideoElement, event: 'loadeddata' | 'ended', timeout: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
-    let timer: ReturnType<typeof setTimeout>;
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error('Export stalled. Keep this tab visible and try again, or download each scene separately.'));
+    }, timeout);
     const cleanup = () => {
       clearTimeout(timer);
       video.removeEventListener(event, done);
@@ -16,10 +19,6 @@ function waitForVideo(video: HTMLVideoElement, event: 'loadeddata' | 'ended', ti
     video.addEventListener(event, done, { once: true });
     video.addEventListener('error', failed, { once: true });
     signal.addEventListener('abort', aborted, { once: true });
-    timer = setTimeout(() => {
-      cleanup();
-      reject(new Error('Export stalled. Keep this tab visible and try again, or download each scene separately.'));
-    }, timeout);
     if (signal.aborted) aborted();
     else if (event === 'loadeddata' && video.readyState >= 2) done();
   });
@@ -136,7 +135,8 @@ export async function exportVideo(
       const finish = (error?: unknown) => {
         clearTimeout(timer);
         controller.signal.removeEventListener('abort', aborted);
-        error ? reject(error) : resolve();
+        if (error) reject(error);
+        else resolve();
       };
       recording.onstop = () => finish();
       controller.signal.addEventListener('abort', aborted, { once: true });

@@ -1,4 +1,5 @@
 import type {Recipe,Scene} from './recipe';
+import {isJsonObject} from './json';
 export type VisualBible={countertop:string;lighting:string;camera:string;vessels:{id:string;description:string}[];tools:{id:string;description:string}[]};
 export type Shot={sourceStep:number;action:string;startState:string;endState:string;ingredientIndices:number[];ingredientAmounts:string[];vesselIds:string[];toolIds:string[];risk:'low'|'high';reviewNote:string;duration:2|3|4|5};
 export type ProductionPlan={version:1;originalSteps:Scene[];bible:VisualBible;continuityVersion?:2};
@@ -25,24 +26,26 @@ export function plannerInput(recipe:Recipe,maxShots:number,targetSeconds?:number
  return text;
 }
 function bounded(value:unknown,label:string,max=600):string{if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error(`The shot plan has an invalid ${label}.`);return value.trim();}
-export function applyShotPlan(recipe:Recipe,value:any,maxShots=30,targetSeconds?:number):Recipe{
+export function applyShotPlan(recipe:Recipe,value:unknown,maxShots=30,targetSeconds?:number):Recipe{
  const original=recipe.production?.originalSteps||recipe.steps;
- if(!value||!Array.isArray(value.shots)||!value.shots.length||value.shots.length>maxShots||value.shots.length>30)throw new Error('The planner exceeded the shot limit. Your recipe has not changed.');
- const b=value.bible;
- if(!b)throw new Error('The shot plan is missing its continuity guide.');
- const objectList=(items:any,label:string)=>{if(!Array.isArray(items)||items.length>20)throw new Error(`Invalid ${label}.`);const result=items.map((x:any)=>({id:bounded(x.id,label,50),description:bounded(x.description,label,300)}));if(new Set(result.map(x=>x.id)).size!==result.length)throw new Error(`Duplicate ${label} IDs.`);return result;};
+ if(!isJsonObject(value)||!Array.isArray(value.shots)||!value.shots.length||value.shots.length>maxShots||value.shots.length>30)throw new Error('The planner exceeded the shot limit. Your recipe has not changed.');
+ const b=value.bible,plannedShots:unknown[]=value.shots;
+ if(!isJsonObject(b))throw new Error('The shot plan is missing its continuity guide.');
+ const objectList=(items:unknown,label:string)=>{if(!Array.isArray(items)||items.length>20)throw new Error(`Invalid ${label}.`);const result=items.map((x:unknown)=>{const item=isJsonObject(x)?x:{};return {id:bounded(item.id,label,50),description:bounded(item.description,label,300)};});if(new Set(result.map(x=>x.id)).size!==result.length)throw new Error(`Duplicate ${label} IDs.`);return result;};
  const bible:VisualBible={countertop:bounded(b.countertop,'countertop',300),lighting:bounded(b.lighting,'lighting',300),camera:bounded(b.camera,'camera',300),vessels:objectList(b.vessels,'vessel'),tools:objectList(b.tools,'tool')};
  const anchors=photoAnchors(recipe),assigned=new Set<string>();
- const declaresPhotos=value.shots.some((s:any)=>Object.hasOwn(s,'sourcePhotoId'));
+ const declaresPhotos=plannedShots.some(s=>isJsonObject(s)&&Object.hasOwn(s,'sourcePhotoId'));
  let prior=0;
- const scenes:Scene[]=value.shots.map((s:any)=>{
-  if(!Number.isInteger(s.sourceStep)||s.sourceStep<1||s.sourceStep>original.length||s.sourceStep<prior)throw new Error('The shot plan changed the recipe order. Your recipe has not changed.');prior=s.sourceStep;
+ const scenes:Scene[]=plannedShots.map(raw=>{
+  const s=isJsonObject(raw)?raw:{},sourceStep=s.sourceStep;
+  if(typeof sourceStep!=='number'||!Number.isInteger(sourceStep)||sourceStep<1||sourceStep>original.length||sourceStep<prior)throw new Error('The shot plan changed the recipe order. Your recipe has not changed.');prior=sourceStep;
   if(!Array.isArray(s.ingredientIndices)||s.ingredientIndices.length>recipe.ingredients.length||s.ingredientIndices.some((i:unknown)=>!Number.isInteger(i)||Number(i)<0||Number(i)>=recipe.ingredients.length))throw new Error('The shot plan references an unknown ingredient.');
   if(!Array.isArray(s.ingredientAmounts)||s.ingredientAmounts.length!==s.ingredientIndices.length)throw new Error('The shot plan is missing allocated ingredient amounts.');
   const ingredientAmounts=s.ingredientAmounts.map((amount:unknown)=>bounded(amount,'ingredient amount',300));
   const ids=(v:unknown,allowed:{id:string}[])=>{if(!Array.isArray(v)||v.some(id=>typeof id!=='string'||!allowed.some(x=>x.id===id)))throw new Error('The shot plan references unknown cookware.');return [...new Set(v)] as string[];};
-  if(![2,3,4,5].includes(s.duration)||!['low','high'].includes(s.risk))throw new Error('Invalid shot duration or risk.');
-  const shot:Shot={sourceStep:s.sourceStep,action:bounded(s.action,'action',400),startState:bounded(s.startState,'starting state'),endState:bounded(s.endState,'ending state'),ingredientIndices:s.ingredientIndices as number[],ingredientAmounts,vesselIds:ids(s.vesselIds,bible.vessels),toolIds:ids(s.toolIds,bible.tools),risk:s.risk,reviewNote:typeof s.reviewNote==='string'?s.reviewNote.slice(0,600):'',duration:s.duration};
+  const duration=s.duration as Shot['duration'],risk=s.risk as Shot['risk'];
+  if(![2,3,4,5].includes(duration)||!['low','high'].includes(risk))throw new Error('Invalid shot duration or risk.');
+  const shot:Shot={sourceStep,action:bounded(s.action,'action',400),startState:bounded(s.startState,'starting state'),endState:bounded(s.endState,'ending state'),ingredientIndices:s.ingredientIndices as number[],ingredientAmounts,vesselIds:ids(s.vesselIds,bible.vessels),toolIds:ids(s.toolIds,bible.tools),risk,reviewNote:typeof s.reviewNote==='string'?s.reviewNote.slice(0,600):'',duration};
   const anchor=s.sourcePhotoId?anchors.find(a=>a.id===s.sourcePhotoId):undefined;
   if(declaresPhotos&&(typeof s.sourcePhotoId!=='string'||(s.sourcePhotoId&&(!anchor||assigned.has(anchor.id)))))throw new Error('The shot plan changed or duplicated a source photo. Your storyboard has not changed.');
   if(anchor)assigned.add(anchor.id);
