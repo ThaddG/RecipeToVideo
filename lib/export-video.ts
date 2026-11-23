@@ -1,6 +1,26 @@
 import type { Recipe } from './recipe';
 import type { MusicSession } from './music';
 
+/** Native MP4 only: never relabel a WebM recording as an MP4 download. */
+export function mp4RecordingType(withAudio = false): string {
+  if (typeof MediaRecorder === 'undefined') throw new Error('MP4 export requires a browser with MediaRecorder support. Your completed scenes are kept.');
+  const codecs = withAudio
+    ? ['video/mp4;codecs=avc1.42001E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4']
+    : ['video/mp4;codecs=avc1.42001E', 'video/mp4;codecs=avc1', 'video/mp4'];
+  const mime = codecs.find(type => MediaRecorder.isTypeSupported(type));
+  if (!mime) throw new Error(`This browser cannot record MP4${withAudio ? ' with background music' : ''}. Try an up-to-date Chrome, Edge, or Safari browser, or download the individual MP4 scenes. Your completed scenes are kept.`);
+  return mime;
+}
+
+export async function verifyMp4Recording(blob: Blob): Promise<void> {
+  // MP4 recordings start with the ISO-BMFF file-type box. Check the actual bytes,
+  // rather than trusting a MIME label or changing the filename extension.
+  const header = new Uint8Array(await blob.slice(0, 16).arrayBuffer());
+  if (header.length < 16 || new DataView(header.buffer).getUint32(0) < 16 || String.fromCharCode(...header.slice(4, 8)) !== 'ftyp') {
+    throw new Error('The browser did not produce a valid MP4 recording. No file was downloaded. Your completed scenes are kept; try another browser or download individual scenes.');
+  }
+}
+
 function waitForVideo(video: HTMLVideoElement, event: 'loadeddata' | 'ended', timeout: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout>;
@@ -35,11 +55,8 @@ export async function exportVideo(
     throw new Error('Every recipe step needs a completed, non-empty video before export.');
   }
   if (!['9:16', '16:9'].includes(format)) throw new Error('Choose portrait or landscape before exporting.');
-  if (typeof MediaRecorder === 'undefined') throw new Error('Video export requires a browser with MediaRecorder support, such as Chrome.');
   if (music && (!Number.isFinite(music.duration) || music.duration <= 0)) throw new Error('Music needs a valid video duration.');
-  const mime = (music ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/mp4', 'video/webm'] : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/mp4', 'video/webm'])
-    .find(x => MediaRecorder.isTypeSupported(x));
-  if (!mime) throw new Error('Your browser does not support full video export. Download individual MP4 scenes or try Chrome.');
+  const mime = mp4RecordingType(!!music);
   const canvas = document.createElement('canvas');
   canvas.width = format === '9:16' ? 720 : 1280;
   canvas.height = format === '9:16' ? 1280 : 720;
@@ -143,8 +160,9 @@ export async function exportVideo(
       if (controller.signal.aborted) aborted();
       else recording.stop();
     });
-    const result = new Blob(parts, { type: mime });
+    const result = new Blob(parts, { type: 'video/mp4' });
     if (!result.size) throw new Error('The browser returned an empty recording. Download individual MP4 scenes or try another browser.');
+    await verifyMp4Recording(result);
     onProgress(1);
     return result;
   } finally {
