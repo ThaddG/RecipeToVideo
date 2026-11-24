@@ -94,10 +94,11 @@ Provider docs: [Runway](https://docs.dev.runwayml.com/guides/using-the-api/), [f
 ## Checks
 
 ```sh
-npm run typecheck
-npm test
+npm run check   # lint, typecheck and tests
 npm run build
 ```
+
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, tests and the Railway build on every pull request and on pushes to `main`.
 
 ## Storyboard generation
 

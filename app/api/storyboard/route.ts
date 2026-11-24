@@ -1,13 +1,17 @@
 import {planImagePrompt} from '../../../lib/shot-plan';
 import {imageModels} from '../../../lib/generation-settings';
 import {imagePrompt,validateImageInput,validateSceneInput} from '../../../lib/storyboard';
+import type {Recipe} from '../../../lib/recipe';
 const api='https://api.dev.runwayml.com/v1';
+/** Client request body; each field is validated below before use. */
+type StoryboardRequest={action?:string;id?:unknown;recipe:Recipe;index:number;format:string;style:string;prompt?:string;imageModel?:string;useImages?:boolean;anchorFrame?:unknown;previousFrame?:unknown;previousFramePhase?:string;phase?:string};
+type RunwayTask={status?:string;output?:unknown[];error?:unknown;message?:unknown};
 export async function POST(request:Request){
  let providerRequestStarted=false;
  try{
   if(Number(request.headers.get('content-length'))>7_000_000)throw new Error('Storyboard request is too large.');
   const key=request.headers.get('x-runway-key');if(!key||key.length>1000)return Response.json({error:'Connect your Runway API key in Settings to generate storyboard images.'},{status:401});
-  const body:any=await request.json(),headers={'Authorization':`Bearer ${key}`,'X-Runway-Version':'2024-11-06','Content-Type':'application/json'};
+  const body=await request.json() as StoryboardRequest,headers={'Authorization':`Bearer ${key}`,'X-Runway-Version':'2024-11-06','Content-Type':'application/json'};
   let response:Response;
   if(body.action==='create'){
    validateSceneInput(body.recipe,body.index,body.format,body.style);
@@ -26,11 +30,11 @@ export async function POST(request:Request){
    providerRequestStarted=true;
    response=await fetch(`${api}/text_to_image`,{method:'POST',headers,body:JSON.stringify({model:nano?'nano_banana_2.1':'gen4_image',ratio:nano?(body.format==='9:16'?'768:1376':'1376:768'):(body.format==='9:16'?'1080:1920':'1920:1080'),promptText,...(nano?{thinkingLevel:'medium'}:{}),...(referenceImages.length?{referenceImages:nano?referenceImages.map(r=>({uri:r.uri})):referenceImages}:{})}),signal:AbortSignal.timeout(30000)});
   }else{
-   if(!['status','media'].includes(body.action)||typeof body.id!=='string'||! /^[a-zA-Z0-9_-]{1,128}$/.test(body.id))throw new Error('Invalid storyboard task.');
+   if(!body.action||!['status','media'].includes(body.action)||typeof body.id!=='string'||! /^[a-zA-Z0-9_-]{1,128}$/.test(body.id))throw new Error('Invalid storyboard task.');
    providerRequestStarted=true;
    response=await fetch(`${api}/tasks/${body.id}`,{headers,signal:AbortSignal.timeout(30000)});
   }
-  const data:any=await response.json();if(!response.ok)return Response.json({error:data.error||data.message||`Runway returned ${response.status}. Check your API credits.`},{status:response.status});
+  const data=await response.json() as RunwayTask;if(!response.ok)return Response.json({error:data.error||data.message||`Runway returned ${response.status}. Check your API credits.`},{status:response.status});
   if(body.action==='media'){
    if(data.status!=='SUCCEEDED'||!data.output?.[0])throw new Error('This storyboard image is not ready.');
    const uri=validateImageInput(data.output[0]);const media=await fetch(uri,{signal:AbortSignal.timeout(30000)});if(!media.ok)throw new Error('This image link expired. Regenerate the frame to refresh it.');

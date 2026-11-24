@@ -1,12 +1,13 @@
 import {applyShotPlan} from './shot-plan';
 import type {Shot,ProductionPlan} from './shot-plan';
 import {articlePhotos,normalizePhotos,matchArticlePhotos,type ArticlePhoto} from './article-photos';
+import {isJsonObject,type JsonObject} from './json';
 export type Scene = { title: string; text: string; image?: string; imageMatch?:string; shot?:Shot };
 export type Recipe = { storyboardApproach?:'original'|'choose';name: string; description: string; ingredients: string[]; steps: Scene[]; images: string[]; totalTime: string; yield: string; source?: string; photos?:ArticlePhoto[]; production?:ProductionPlan };
 const clean = (s: unknown) => typeof s === 'string' ? s.replace(/<[^>]*>/g, '').replace(/&(?:amp|nbsp|quot|apos|lt|gt|#39|#34);/g, x => ({'&amp;':'&','&nbsp;':' ','&quot;':'"','&apos;':"'",'&#39;':"'",'&#34;':'"','&lt;':'<','&gt;':'>'}[x] || x)).replace(/\s+/g, ' ').trim() : '';
-function urls(v: any, base?: string): string[] {
- return (Array.isArray(v) ? v : [v]).flatMap(x => {
-  const value = typeof x === 'string' ? x : x?.url || x?.contentUrl;
+function urls(v: unknown, base?: string): string[] {
+ return (Array.isArray(v) ? v : [v]).flatMap((x: unknown) => {
+  const value = typeof x === 'string' ? x : isJsonObject(x) ? x.url || x.contentUrl : undefined;
   if (typeof value !== 'string') return [];
   try { const u = new URL(value, base); return u.protocol === 'https:' && !u.username && !u.password ? [u.href] : []; } catch { return []; }
  });
@@ -17,10 +18,10 @@ function canonicalURL(html: string): string | undefined {
   if (attributes.rel?.toLowerCase() === 'canonical') return urls(attributes.href)[0];
  }
 }
-function findRecipe(v: any, depth = 0): any { if (!v || typeof v !== 'object' || depth > 20) return null; if ([v['@type']].flat().some(t => typeof t === 'string' && /(^|[/#])Recipe$/.test(t))) return v; for (const x of Object.values(v)) { if (x && typeof x === 'object') { const found = findRecipe(x, depth + 1); if (found) return found; } } return null; }
-function steps(v: any, base?: string): Scene[] { if (typeof v === 'string') return v.split(/\n+/).map(clean).filter(Boolean).map((text, i) => ({title: '', text})); if (Array.isArray(v)) return v.flatMap(x => steps(x, base)); if (!v || typeof v !== 'object') return []; if (v.itemListElement) return steps(v.itemListElement, base); if (v.item) return steps(v.item, base); const text = clean(v.text || v.name); return text ? [{title: clean(v.name) || '', text, image: urls(v.image, base)[0]}] : []; }
+function findRecipe(v: unknown, depth = 0): JsonObject | null { if (!v || typeof v !== 'object' || depth > 20) return null; const node = v as JsonObject; if ([node['@type']].flat().some(t => typeof t === 'string' && /(^|[/#])Recipe$/.test(t))) return node; for (const x of Object.values(node)) { if (x && typeof x === 'object') { const found = findRecipe(x, depth + 1); if (found) return found; } } return null; }
+function steps(v: unknown, base?: string): Scene[] { if (typeof v === 'string') return v.split(/\n+/).map(clean).filter(Boolean).map(text => ({title: '', text})); if (Array.isArray(v)) return v.flatMap(x => steps(x, base)); if (!isJsonObject(v)) return []; if (v.itemListElement) return steps(v.itemListElement, base); if (v.item) return steps(v.item, base); const text = clean(v.text || v.name); return text ? [{title: clean(v.name) || '', text, image: urls(v.image, base)[0]}] : []; }
 export function parseRecipe(input: string | object, source?: string): Recipe {
- let data: any;
+ let data: unknown;
  const base = (typeof input === 'string' ? canonicalURL(input) : undefined) || urls(source)[0];
  if (typeof input === 'string') {
   if (input.length > 15_000_000) throw new Error('Recipe input is too large. Use an HTML or JSON file smaller than 15 MB.');

@@ -17,10 +17,13 @@ export function planningError(message:string,status?:number){
  if(/(?:model.*(?:no longer available|not available|not found|unsupported)|not supported.*model)/i.test(message))return 'The planning service is unavailable for this account. Refresh the app and try again. If this continues, check API access in your planning-service account.';
  return message;
 }
-export function interactionText(data:any):string{
+/** The fields of a Gemini Interactions API response that the planner reads. */
+export type InteractionResponse={status?:string;steps?:unknown;output_text?:unknown;usage?:unknown;error?:{message?:string}};
+type ContentBlock={type?:unknown;text?:unknown;content?:unknown};
+const blocks=(value:unknown):ContentBlock[]=>Array.isArray(value)?value.filter((x):x is ContentBlock=>typeof x==='object'&&x!==null):[];
+export function interactionText(data:InteractionResponse|null|undefined):string{
  if(data?.status!=='completed')throw new Error('The planner did not finish a complete plan. Your recipe has not changed. Reduce the shot limit before trying again.');
- const steps=Array.isArray(data.steps)?data.steps:[];
- const output=steps.filter((s:any)=>s?.type==='model_output').flatMap((s:any)=>Array.isArray(s.content)?s.content:[]).filter((c:any)=>c?.type==='text'&&typeof c.text==='string').map((c:any)=>c.text).join('');
+ const output=blocks(data.steps).filter(s=>s.type==='model_output').flatMap(s=>blocks(s.content)).flatMap(c=>c.type==='text'&&typeof c.text==='string'?[c.text]:[]).join('');
  if(output)return output;
  // Some API revisions expose the aggregate convenience field as well.
  if(typeof data.output_text==='string'&&data.output_text.trim())return data.output_text;

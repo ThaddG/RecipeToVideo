@@ -1,15 +1,18 @@
 import {validVideoDuration} from '../../../lib/shot-timing';
-import {falVideo} from '../../../lib/fal-video';
+import {falVideo,type FalVideoRequest} from '../../../lib/fal-video';
 import { scenePrompt, type Recipe } from '../../../lib/recipe';
 import { publicURL } from '../../../lib/network';
 import {motionPrompt,validateImageInput} from '../../../lib/storyboard';
 import {failureMessage} from '../../../lib/video-jobs';
 const api='https://api.dev.runwayml.com/v1';
+/** Client request body; each field is validated below before use. */
+type VideoRequest=FalVideoRequest&{model?:string;action?:string;recipe?:Recipe;index:number;style:string;format:string;useImages?:boolean;storyboardRequired?:boolean;motionPrompt?:string;requestId?:unknown};
+type RunwayTask={id?:string;status?:string;output?:string[];failureCode?:unknown;error?:unknown;message?:unknown};
 export async function POST(request: Request) {
  let providerRequestStarted=false;
  try {
   if (Number(request.headers.get('content-length'))>7_000_000) throw new Error('Request too large.');
-  const b:any=await request.json();
+  const b=await request.json() as VideoRequest;
   if(b.model==='minimax'||b.model==='kling'){providerRequestStarted=true;return await falVideo(request,b);}
   if(b.model&&!['runway','grok'].includes(b.model))throw new Error('Unsupported video model.');
   const grok=b.model==='grok';
@@ -27,12 +30,12 @@ export async function POST(request: Request) {
    providerRequestStarted=true;
    response=await fetch(`${api}/${image?'image_to_video':'text_to_video'}`,{method:'POST',headers,body:JSON.stringify({model:grok?'grok_imagine_1_5_lite':'gen4.5',promptText,ratio:grok&&image?'auto_720p':b.format==='9:16'?'720:1280':'1280:720',duration:b.duration,...(image?{promptImage:image}:{})}),signal:AbortSignal.timeout(30000)});
   } else {
-   if (!['status','media','cancel'].includes(b.action) || typeof b.id!=='string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(b.id)) throw new Error('Invalid video task.');
+   if (!b.action || !['status','media','cancel'].includes(b.action) || typeof b.id!=='string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(b.id)) throw new Error('Invalid video task.');
    providerRequestStarted=true;
    response=await fetch(`${api}/tasks/${b.id}`,{headers,method:b.action==='cancel'?'DELETE':'GET',signal:AbortSignal.timeout(30000)});
    if (b.action==='cancel'&&response.ok) return Response.json({ok:true});
   }
-  const data:any=await response.json();
+  const data=await response.json() as RunwayTask;
   if (!response.ok) return Response.json({error:failureMessage(data.error||data.message||`Runway returned ${response.status}. Check your API key and credits.`)},{status:response.status,headers:response.headers.get('retry-after')?{'Retry-After':response.headers.get('retry-after')!}:undefined});
   if(b.action==='create'&&data.id)console.info('Runway video task created',{scene:b.index+1,taskId:data.id,requestId:typeof b.requestId==='string'?b.requestId.slice(0,64):undefined});
   if(b.action==='status'&&data.status==='FAILED')console.warn('Runway video task failed',{taskId:b.id,failureCode:data.failureCode});

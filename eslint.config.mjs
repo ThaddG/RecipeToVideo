@@ -16,6 +16,15 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
+  {
+    // app/page.tsx still resets state inside 4 effects (sidebar on view change,
+    // localStorage hydration on mount, preview loading, stage override reset).
+    // Kept as warnings until they are reworked; every other rule is enforced.
+    files: ["app/page.tsx"],
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

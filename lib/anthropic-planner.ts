@@ -9,17 +9,21 @@ export function anthropicPlanningError(status:number,message=''){
  if(status===503||status===529)return 'The planning provider is temporarily unavailable. Your storyboard has not changed. No other service or paid retry was started.';
  return `The planning provider rejected this request (${status}). Your storyboard has not changed. Check its API request history before retrying.`;
 }
-export function anthropicPlanText(data:any):string{
+/** The fields of an Anthropic Messages API response that the planner reads. */
+export type AnthropicMessageResponse={stop_reason?:string;stop_details?:{type?:string}|null;content?:unknown;usage?:unknown;error?:{message?:string}};
+type TextBlock={type:'text';text:string};
+const isTextBlock=(b:unknown):b is TextBlock=>typeof b==='object'&&b!==null&&(b as Partial<TextBlock>).type==='text'&&typeof (b as Partial<TextBlock>).text==='string';
+export function anthropicPlanText(data:AnthropicMessageResponse|null|undefined):string{
  if(data?.stop_details?.type==='refusal'||data?.stop_reason==='refusal')throw new Error('The planning provider declined this request. Your storyboard has not changed.');
  if(data?.stop_reason!=='end_turn')throw new Error('The planner did not finish a complete plan. Your storyboard has not changed. Reduce the shot limit before trying again.');
- const output=(Array.isArray(data.content)?data.content:[]).filter((b:any)=>b?.type==='text'&&typeof b.text==='string').map((b:any)=>b.text).join('');
+ const output=(Array.isArray(data.content)?data.content:[]).filter(isTextBlock).map(b=>b.text).join('');
  if(!output.trim())throw new Error('The planner returned no shot plan. Your storyboard has not changed.');
  return output;
 }
 export async function createAnthropicPlan(key:string,input:string,choice:ClaudePlanner){
  const model=claudePlanners[choice];
  const response=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`,'anthropic-version':'2026-10-21'},body:JSON.stringify({model:model.model,max_tokens:PLANNER_MAX_OUTPUT_TOKENS,thinking:{type:'adaptive'},output_config:{effort:model.effort,format:{type:'json_schema',schema:planSchema}},messages:[{role:'user',content:input}]}),signal:AbortSignal.timeout(180000)});
- const data:any=await response.json().catch(()=>null);
+ const data=await response.json().catch(()=>null) as AnthropicMessageResponse|null;
  if(!response.ok){console.warn('Shot planner request rejected',{planner:choice,status:response.status,requestId:response.headers.get('request-id')});return {ok:false as const,status:response.status,error:anthropicPlanningError(response.status,data?.error?.message||''),retryAfter:response.headers.get('retry-after')};}
- return {ok:true as const,output:anthropicPlanText(data),usage:data.usage,model:model.model};
+ return {ok:true as const,output:anthropicPlanText(data),usage:data?.usage,model:model.model};
 }

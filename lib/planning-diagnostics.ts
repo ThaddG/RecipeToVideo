@@ -24,7 +24,7 @@ export async function diagnosePlanning(key:string):Promise<PlanningProbe[]>{
  for(const probe of probes){
   try{
    const response=await fetch(probe.url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key,...(probe.revision?{'Api-Revision':PLANNER_API_REVISION}:{})},body:JSON.stringify(probe.body),signal:AbortSignal.timeout(15000)});
-   const data:any=await response.json().catch(()=>null),error=data?.error;
+   const data=await response.json().catch(()=>null) as {error?:{status?:unknown;code?:unknown;message?:unknown}}|null,error=data?.error;
    results.push({name:probe.name,status:response.status,code:redact(error?.status||error?.code||(response.ok?'ACCEPTED':'HTTP_ERROR'),key),message:response.ok?'Tiny request accepted; this is not a completed recipe plan.':redact(error?.message||'No structured error details were returned.',key),requestId:redact(response.headers.get('x-request-id')||response.headers.get('x-goog-request-id'),key)||undefined});
    if([401,403,429].includes(response.status))break;
   }catch{results.push({name:probe.name,status:0,code:'CONNECTION_INTERRUPTED',message:'Connection interrupted or timed out. Acceptance could not be confirmed; no automatic retry was made.'});}
